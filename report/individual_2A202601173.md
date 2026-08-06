@@ -11,7 +11,7 @@
 | **Họ và tên** | Vũ Hải Nam |
 | **MSSV** | 2A202601173 |
 | **Khóa / Lớp** | K3 |
-| **Tên nhóm** | Nhóm 6 người |
+| **Tên nhóm** | C6_2 |
 | **Vai trò chính** | **Role 1: Team Lead (Phụ trách Dàn nhạc, Data Contract & Orchestration)** |
 | **Repository** | https://github.com/maniahuv/K3_Day10_Data-Pipeline-Data-Observability_C6_2 |
 | **Ngày hoàn thành**| 2026-08-06 |
