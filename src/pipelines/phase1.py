@@ -28,7 +28,7 @@ def main() -> None:
         print("❌ Lỗi (Blocker): Dữ liệu raw trống!")
         sys.exit(1)
 
-    # 3. Clean data (Giao cho Role 3 thực hiện, hàm này có thể văng NotImplementedError)
+    # 3. Clean data (Do Role 3 thực hiện)
     print("🧹 Bắt đầu quá trình làm sạch dữ liệu (Gọi module cleaning)...")
     try:
         run_date = datetime.now(UTC)
@@ -41,6 +41,14 @@ def main() -> None:
     clean_count = len(clean_df)
     print(f"✅ Quá trình làm sạch hoàn tất.")
     print(f"📊 Thống kê: Raw Count = {raw_count} | Clean Count = {clean_count}")
+
+    # Truy vết lý do loại bỏ (từ cleaning_log của Role 3)
+    cleaning_log = clean_df.attrs.get("cleaning_log", {})
+    counts_by_reason = cleaning_log.get("counts_by_reason", {})
+    if counts_by_reason:
+        print("🔍 Chi tiết lý do loại bỏ record:")
+        for reason, count in counts_by_reason.items():
+            print(f"   - {reason}: {count} records")
 
     # Review (Bắt lỗi) drop rate
     drop_rate = (raw_count - clean_count) / raw_count
@@ -55,12 +63,23 @@ def main() -> None:
         print("\n❌ [Blocker Evidence]: Không còn bản ghi nào sau khi làm sạch!")
         sys.exit(1)
 
-    # 4. Save clean CSV/JSON
+    # 4. Save clean CSV/JSON/Log bằng hàm của Role 3
+    from ingestion.cleaning import save_clean_artifacts
     settings.paths.clean_csv.parent.mkdir(parents=True, exist_ok=True)
-    clean_df.to_csv(settings.paths.clean_csv, index=False)
-    clean_df.to_json(settings.paths.clean_json, orient="records", lines=True)
-    print(f"💾 Đã lưu dữ liệu clean vào {settings.paths.clean_csv.name} và {settings.paths.clean_json.name}")
+    
+    # Giả sử chúng ta lưu log vào thư mục reports
+    log_path = settings.paths.workspace_dir / "data" / "reports" / "cleaning_log.json"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    save_clean_artifacts(
+        dataframe=clean_df,
+        csv_path=settings.paths.clean_csv,
+        json_path=settings.paths.clean_json,
+        log_path=log_path
+    )
+    print(f"💾 Đã lưu dữ liệu clean vào {settings.paths.clean_csv.name}, {settings.paths.clean_json.name}")
+    print(f"📄 Đã lưu log làm sạch vào {log_path.name}")
 
     # Chặn (Block): Dừng ở đây trong Checkpoint 1
-    print("\n🚧 [Checkpoint 1]: Đã khóa Schema Clean. Chưa gọi Test Set/Index.")
-    print("🚧 Hoàn thành xuất sắc nhiệm vụ tích hợp của Role 1!")
+    print("\n🚧 [Checkpoint 1]: Đã khóa Schema Clean. Cấu trúc dữ liệu đã được verify.")
+    print("🚧 Hoàn thành xuất sắc nhiệm vụ tích hợp của Role 1 (Checkpoint 1)!")
