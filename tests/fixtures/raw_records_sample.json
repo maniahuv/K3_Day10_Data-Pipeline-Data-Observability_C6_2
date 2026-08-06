@@ -1,0 +1,54 @@
+[
+  {
+    "paper_id": "10.1234/sample.1",
+    "title": "  A sample paper  ",
+    "summary": "  Useful summary.  ",
+    "authors": ["Ada Lovelace", "Ada Lovelace", ""],
+    "categories": ["Machine Learning", "Machine Learning", ""],
+    "primary_category": "Machine Learning",
+    "published": "2025-01-02",
+    "updated": "2025-02-03",
+    "abs_url": "https://doi.org/10.1234/sample.1",
+    "pdf_url": "https://example.test/paper.pdf",
+    "comment": ""
+  },
+  {
+    "paper_id": "10.1234/SAMPLE.1",
+    "title": "Duplicate paper",
+    "summary": "Duplicate summary.",
+    "authors": [],
+    "categories": [],
+    "primary_category": "",
+    "published": "2025-01-03",
+    "updated": "",
+    "abs_url": "",
+    "pdf_url": "",
+    "comment": ""
+  },
+  {
+    "paper_id": "10.1234/missing-summary",
+    "title": "Missing summary",
+    "summary": "",
+    "authors": [],
+    "categories": [],
+    "primary_category": "",
+    "published": "2025-01-03",
+    "updated": "",
+    "abs_url": "",
+    "pdf_url": "",
+    "comment": ""
+  },
+  {
+    "paper_id": "10.1234/invalid-date",
+    "title": "Invalid date",
+    "summary": "This record must be filtered.",
+    "authors": [],
+    "categories": [],
+    "primary_category": "",
+    "published": "not-a-date",
+    "updated": "",
+    "abs_url": "",
+    "pdf_url": "",
+    "comment": ""
+  }
+]
