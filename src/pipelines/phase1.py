@@ -80,6 +80,63 @@ def main() -> None:
     print(f"💾 Đã lưu dữ liệu clean vào {settings.paths.clean_csv.name}, {settings.paths.clean_json.name}")
     print(f"📄 Đã lưu log làm sạch vào {log_path.name}")
 
-    # Chặn (Block): Dừng ở đây trong Checkpoint 1
-    print("\n🚧 [Checkpoint 1]: Đã khóa Schema Clean. Cấu trúc dữ liệu đã được verify.")
-    print("🚧 Hoàn thành xuất sắc nhiệm vụ tích hợp của Role 1 (Checkpoint 1)!")
+    # --- BẮT ĐẦU CHECKPOINT 2 ---
+    print("\n🚀 Bắt đầu Handoff sang Checkpoint 2: Quality Gates, Indexing & Test Set")
+
+    # 5. Quality Check & Freshness Report (Role 6)
+    from observability.quality import run_data_quality_checks, build_freshness_report
+    print("🔎 Đang chạy Quality Checks...")
+    quality_report = run_data_quality_checks(clean_df, settings, report_name="baseline_quality")
+    if quality_report.get("status") == "WARNING":
+        print("⚠️ [Cảnh báo]: Quality check trả về WARNING. Có thể schema vẫn còn vấn đề.")
+    
+    print("⏳ Đang chạy Freshness Report...")
+    freshness_report = build_freshness_report(clean_df, settings, report_path=settings.paths.freshness_report)
+    if not freshness_report.get("is_fresh"):
+        print(f"⚠️ [Cảnh báo]: Dữ liệu có {freshness_report.get('stale_rows')} records quá cũ (stale)!")
+
+    # 6. Build Chroma Index (Role 4)
+    from retrieval.index import LocalEmbeddingIndex
+    print("🗄️ Đang xây dựng Local Embedding Index (ChromaDB)...")
+    try:
+        index = LocalEmbeddingIndex.build(
+            df=clean_df,
+            settings=settings,
+            embeddings_output_path=settings.paths.embeddings_json
+        )
+        print(f"✅ Index xây dựng thành công tại: {settings.paths.chroma_dir}")
+    except Exception as e:
+        print(f"❌ [Blocker]: Lỗi khi build Chroma Index: {e}")
+        sys.exit(1)
+
+    # 7. Generate Test Set (Role 5)
+    from evaluation.testset import build_test_set
+    print("📝 Đang tạo bộ câu hỏi đánh giá (Test Set)...")
+    try:
+        test_set = build_test_set(clean_df, output_path=settings.paths.eval_testset)
+        print(f"✅ Đã tạo {len(test_set)} câu hỏi test set lưu tại: {settings.paths.eval_testset.name}")
+    except Exception as e:
+        print(f"❌ [Blocker]: Lỗi khi tạo Test Set: {e}")
+        sys.exit(1)
+
+    # 8. Agent Smoke Test (Role 4)
+    from retrieval.agent import build_agent, run_agent_question
+    print("🤖 Đang khởi tạo Agent Smoke Test...")
+    try:
+        agent = build_agent(settings, index)
+        
+        # Chọn câu hỏi đầu tiên trong test set để hỏi thử
+        if test_set:
+            smoke_question = test_set[0]["question"]
+            print(f"❓ Hỏi Agent: {smoke_question}")
+            answer = run_agent_question(agent, smoke_question)
+            print(f"💡 Trả lời: {answer}")
+        else:
+            print("⚠️ Không có câu hỏi nào trong test set để chạy Smoke Test.")
+            
+    except Exception as e:
+        print(f"❌ [Blocker]: Lỗi khi chạy Agent Smoke Test (Có thể do thiếu API Key): {e}")
+        sys.exit(1)
+
+    print("\n🚧 [Checkpoint 2]: Đã hoàn tất Test Set, Index và Smoke Test.")
+    print("🚧 Bạn có thể chuyển sang Checkpoint 3 (End-to-End Evaluation)!")

@@ -56,4 +56,19 @@ def run_agent_question(agent: Any, question: str) -> str:
     if not messages:
         return ""
     final_message = messages[-1]
-    return getattr(final_message, "content", str(final_message))
+    
+    content = getattr(final_message, "content", str(final_message))
+    # Xử lý trường hợp Langchain/LLM trả về List[dict] (e.g. Claude/Gemini structured outputs)
+    if isinstance(content, list):
+        text_parts = []
+        for block in content:
+            if isinstance(block, dict) and "text" in block:
+                text_parts.append(block["text"])
+            elif isinstance(block, str):
+                text_parts.append(block)
+        if text_parts:
+            return "".join(text_parts)
+    elif isinstance(content, str):
+        return content
+        
+    return str(content)
