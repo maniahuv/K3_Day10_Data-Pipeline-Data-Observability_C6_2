@@ -34,7 +34,7 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
     missing_summary_rate = float(missing_summary_count / total_rows) if total_rows > 0 else 1.0
 
     # 3. Check duplicate (overall row duplicates)
-    duplicate_rows_count = int(df.duplicated().sum()) if total_rows > 0 else 0
+    duplicate_rows_count = int(df.astype(str).duplicated().sum()) if total_rows > 0 else 0
     duplicate_rows_rate = float(duplicate_rows_count / total_rows) if total_rows > 0 else 0.0
 
     # 4. Check age_days (freshness)

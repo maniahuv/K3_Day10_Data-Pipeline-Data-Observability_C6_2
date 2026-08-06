@@ -81,21 +81,9 @@ def main() -> None:
     print(f"📄 Đã lưu log làm sạch vào {log_path.name}")
 
     # --- BẮT ĐẦU CHECKPOINT 2 ---
-    print("\n🚀 Bắt đầu Handoff sang Checkpoint 2: Quality Gates, Indexing & Test Set")
+    print("\n🚀 Bắt đầu Handoff sang Checkpoint 2: Indexing & Test Set")
 
-    # 5. Quality Check & Freshness Report (Role 6)
-    from observability.quality import run_data_quality_checks, build_freshness_report
-    print("🔎 Đang chạy Quality Checks...")
-    quality_report = run_data_quality_checks(clean_df, settings, report_name="baseline_quality")
-    if quality_report.get("status") == "WARNING":
-        print("⚠️ [Cảnh báo]: Quality check trả về WARNING. Có thể schema vẫn còn vấn đề.")
-    
-    print("⏳ Đang chạy Freshness Report...")
-    freshness_report = build_freshness_report(clean_df, settings, report_path=settings.paths.freshness_report)
-    if not freshness_report.get("is_fresh"):
-        print(f"⚠️ [Cảnh báo]: Dữ liệu có {freshness_report.get('stale_rows')} records quá cũ (stale)!")
-
-    # 6. Build Chroma Index (Role 4)
+    # 5. Build Chroma Index (Role 4)
     from retrieval.index import LocalEmbeddingIndex
     print("🗄️ Đang xây dựng Local Embedding Index (ChromaDB)...")
     try:
@@ -109,7 +97,7 @@ def main() -> None:
         print(f"❌ [Blocker]: Lỗi khi build Chroma Index: {e}")
         sys.exit(1)
 
-    # 7. Generate Test Set (Role 5)
+    # 6. Generate Test Set (Role 5)
     from evaluation.testset import build_test_set
     print("📝 Đang tạo bộ câu hỏi đánh giá (Test Set)...")
     try:
@@ -119,24 +107,65 @@ def main() -> None:
         print(f"❌ [Blocker]: Lỗi khi tạo Test Set: {e}")
         sys.exit(1)
 
-    # 8. Agent Smoke Test (Role 4)
+    # 7. Agent Smoke Test (Role 4 - Tuỳ chọn nhưng nên giữ)
     from retrieval.agent import build_agent, run_agent_question
     print("🤖 Đang khởi tạo Agent Smoke Test...")
     try:
         agent = build_agent(settings, index)
-        
-        # Chọn câu hỏi đầu tiên trong test set để hỏi thử
         if test_set:
             smoke_question = test_set[0]["question"]
             print(f"❓ Hỏi Agent: {smoke_question}")
             answer = run_agent_question(agent, smoke_question)
             print(f"💡 Trả lời: {answer}")
-        else:
-            print("⚠️ Không có câu hỏi nào trong test set để chạy Smoke Test.")
-            
     except Exception as e:
-        print(f"❌ [Blocker]: Lỗi khi chạy Agent Smoke Test (Có thể do thiếu API Key): {e}")
+        print(f"⚠️ [Cảnh báo]: Agent Smoke Test bị lỗi: {e}")
+
+    # --- BẮT ĐẦU CHECKPOINT 3 ---
+    print("\n🚀 Bắt đầu Checkpoint 3: Baseline End-to-End Evaluation & Báo cáo")
+
+    # 8. Evaluate Pipeline (Role 5)
+    from evaluation.metrics import evaluate_pipeline
+    print("⚖️ Đang chạy Evaluator (Gọi LLM để trả lời và chấm điểm 40 câu hỏi)... (Sẽ mất 1-3 phút)")
+    try:
+        eval_bundle = evaluate_pipeline(
+            settings=settings,
+            index=index,
+            test_set_path=settings.paths.eval_testset,
+            metrics_output_path=settings.paths.baseline_metrics,
+            answers_output_path=settings.paths.baseline_answers
+        )
+        print(f"✅ Đã chấm điểm xong! Hit Rate: {eval_bundle.summary.get('retrieval_hit_rate'):.2%} | Token F1: {eval_bundle.summary.get('mean_token_f1'):.4f}")
+    except Exception as e:
+        print(f"❌ [Blocker]: Lỗi khi chạy Evaluate Pipeline: {e}")
         sys.exit(1)
 
-    print("\n🚧 [Checkpoint 2]: Đã hoàn tất Test Set, Index và Smoke Test.")
-    print("🚧 Bạn có thể chuyển sang Checkpoint 3 (End-to-End Evaluation)!")
+    # 9. Quality Check & Freshness Report (Role 6)
+    from observability.quality import run_data_quality_checks, build_freshness_report
+    print("🔎 Đang thu thập các tín hiệu Quality & Freshness...")
+    quality_report = run_data_quality_checks(clean_df, settings, report_name="baseline_quality")
+    freshness_report = build_freshness_report(clean_df, settings, report_path=settings.paths.freshness_report)
+
+    # 10. Generate Phase 1 Report (Role 6)
+    from observability.reporting import generate_phase1_report
+    print("📄 Đang xuất Báo cáo Phase 1 (Markdown)...")
+    try:
+        source_summary = {
+            "source_api": settings.source_api,
+            "source_query": settings.source_query,
+            "source_filter": settings.source_filter,
+            "max_results": settings.max_results,
+        }
+        generate_phase1_report(
+            report_path=settings.paths.baseline_report,
+            source_summary=source_summary,
+            metrics=eval_bundle.summary,
+            quality=quality_report,
+            freshness=freshness_report
+        )
+        print(f"✅ Đã lưu báo cáo tại: {settings.paths.baseline_report}")
+    except Exception as e:
+        print(f"❌ [Blocker]: Lỗi khi sinh Báo cáo Phase 1: {e}")
+        sys.exit(1)
+
+    print("\n🎉 [Checkpoint 3]: Đã hoàn tất Baseline End-to-End Evaluation!")
+    print("🎉 File báo cáo Markdown và dữ liệu Metrics đã sẵn sàng để review.")
