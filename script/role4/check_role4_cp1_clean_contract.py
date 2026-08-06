@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
@@ -14,10 +14,10 @@ except ModuleNotFoundError as exc:
     raise SystemExit(
         "Missing dependency: pandas. Install the project environment first, then rerun:\n"
         "  uv sync\n"
-        "  uv run python script/check_role4_cp1_clean_contract.py\n"
+        "  uv run python script/role4/check_role4_cp1_clean_contract.py\n"
         "or with venv:\n"
         "  python -m pip install -e .\n"
-        "  python script/check_role4_cp1_clean_contract.py"
+        "  python script/role4/check_role4_cp1_clean_contract.py"
     ) from exc
 
 
@@ -62,7 +62,7 @@ def _print_sample_text(df: pd.DataFrame, limit: int = 3) -> None:
 
 
 def main() -> int:
-    project_root = Path.cwd()
+    project_root = PROJECT_ROOT
     clean_csv = project_root / "data" / "clean" / "papers_clean.csv"
     clean_json = project_root / "data" / "clean" / "papers_clean.json"
     embeddings_manifest = project_root / "data" / "embeddings" / "papers_embeddings.json"
