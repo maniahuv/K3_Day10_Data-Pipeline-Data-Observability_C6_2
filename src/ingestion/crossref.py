@@ -7,10 +7,11 @@ import re
 import time
 from typing import Any
 
+from core.utils import normalize_whitespace, read_json, write_json
+
 import requests
 
 from core.config import Settings
-from core.utils import normalize_whitespace, read_json, write_json
 
 
 @dataclass(frozen=True)
@@ -226,3 +227,62 @@ def load_raw_records(path: Path) -> list[PaperRecord]:
         records.append(PaperRecord(**item))
 
     return records
+
+
+def build_raw_snapshot_report(
+    settings: Settings,
+    clean_records: list[dict[str, Any]],
+    embeddings_manifest: list[dict[str, Any]],
+    sample_paper_id: str,
+) -> dict[str, Any]:
+    """Tạo bằng chứng provenance/raw snapshot cho checkpoint 5.
+
+    Mục tiêu: xác nhận raw snapshot đã được lưu trước khi corrupt data và
+    cho phép truy vết một paper_id từ raw -> clean -> embedding manifest.
+    """
+    raw_response_path = settings.paths.raw_api_response
+    raw_records_path = settings.paths.raw_records_json
+
+    if not raw_response_path.exists() or not raw_records_path.exists():
+        raise FileNotFoundError("Raw snapshot artifacts are missing for provenance check.")
+
+    raw_response = read_json(raw_response_path)
+    raw_records = read_json(raw_records_path)
+    response_items = raw_response.get("message", {}).get("items", []) if isinstance(raw_response, dict) else []
+
+    raw_records_count = len(raw_records) if isinstance(raw_records, list) else 0
+    response_items_count = len(response_items) if isinstance(response_items, list) else 0
+
+    raw_match = next((item for item in raw_records if isinstance(item, dict) and item.get("paper_id") == sample_paper_id), None)
+    clean_match = next((item for item in clean_records if isinstance(item, dict) and item.get("paper_id") == sample_paper_id), None)
+    embedding_match = next(
+        (
+            item
+            for item in embeddings_manifest
+            if isinstance(item, dict)
+            and isinstance(item.get("metadata"), dict)
+            and item.get("metadata", {}).get("paper_id") == sample_paper_id
+        ),
+        None,
+    )
+
+    report = {
+        "raw_snapshot_frozen": True,
+        "refresh_source_allowed": bool(settings.refresh_source),
+        "source_api": settings.source_api,
+        "response_items": response_items_count,
+        "raw_records_count": raw_records_count,
+        "sample_paper_id": sample_paper_id,
+        "sample_lineage": {
+            "raw_to_clean": bool(raw_match and clean_match),
+            "clean_to_embedding": bool(clean_match and embedding_match),
+            "raw_title": raw_match.get("title") if raw_match else None,
+            "clean_title": clean_match.get("title") if clean_match else None,
+            "embedding_title": embedding_match.get("metadata", {}).get("title") if embedding_match else None,
+            "raw_abs_url": raw_match.get("abs_url") if raw_match else None,
+            "clean_abs_url": clean_match.get("abs_url") if clean_match else None,
+            "embedding_abs_url": embedding_match.get("metadata", {}).get("abs_url") if embedding_match else None,
+        },
+        "freeze_rule": "Do not refresh raw artifacts during baseline/corruption comparison; use the frozen snapshot for lineage and fairness.",
+    }
+    return report

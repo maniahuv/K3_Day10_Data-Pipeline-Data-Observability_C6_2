@@ -1,0 +1,19 @@
+{
+  "raw_snapshot_frozen": true,
+  "refresh_source_allowed": false,
+  "source_api": "Crossref REST API",
+  "response_items": 24,
+  "raw_records_count": 24,
+  "sample_paper_id": "10.36227/techrxiv.177272838.89432844/v1",
+  "sample_lineage": {
+    "raw_to_clean": true,
+    "clean_to_embedding": false,
+    "raw_title": "A Survey of (Deep RAG) Deep Retrieval Augmented Generation and Reasoning in Large Language Models",
+    "clean_title": "A Survey of (Deep RAG) Deep Retrieval Augmented Generation and Reasoning in Large Language Models",
+    "embedding_title": null,
+    "raw_abs_url": "https://doi.org/10.36227/techrxiv.177272838.89432844/v1",
+    "clean_abs_url": "https://doi.org/10.36227/techrxiv.177272838.89432844/v1",
+    "embedding_abs_url": null
+  },
+  "freeze_rule": "Do not refresh raw artifacts during baseline/corruption comparison; use the frozen snapshot for lineage and fairness."
+}

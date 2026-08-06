@@ -5,6 +5,7 @@ def main() -> None:
     from core.config import load_settings
     import pandas as pd
     import sys
+    from core.utils import write_json
 
     settings = load_settings()
     print("🚀 [CP5] Bắt đầu luồng Corruption & Evaluation (Role 1)")
@@ -14,7 +15,7 @@ def main() -> None:
     if not clean_path.exists():
         print(f"❌ Lỗi: Không tìm thấy file {clean_path}. Vui lòng chạy phase1 trước!")
         sys.exit(1)
-    
+
     clean_df = pd.read_json(clean_path, orient="records")
     print(f"📦 Đã nạp {len(clean_df)} bản ghi Baseline sạch.")
 
@@ -37,6 +38,26 @@ def main() -> None:
     corrupted_df.to_json(settings.paths.corrupted_clean_json, orient="records", force_ascii=False, indent=2)
     corrupted_df.to_csv(settings.paths.corrupted_clean_csv, index=False)
     print(f"💾 Đã lưu corrupted dataset vào {settings.paths.corrupted_clean_json.name}")
+
+    # 3b. Build raw snapshot provenance report (Role 2)
+    from ingestion.crossref import build_raw_snapshot_report
+    try:
+        clean_records = clean_df.to_dict(orient="records")
+        embeddings_manifest = []
+        if settings.paths.embeddings_json.exists():
+            embeddings_manifest = pd.read_json(settings.paths.embeddings_json, orient="records").to_dict(orient="records")
+        sample_paper_id = "10.36227/techrxiv.177272838.89432844/v1"
+        provenance_report = build_raw_snapshot_report(
+            settings=settings,
+            clean_records=clean_records,
+            embeddings_manifest=embeddings_manifest,
+            sample_paper_id=sample_paper_id,
+        )
+        provenance_path = settings.paths.quality_dir / "raw_provenance_checkpoint5.json"
+        write_json(provenance_path, provenance_report)
+        print(f"🧭 Đã lưu raw provenance evidence vào {provenance_path.name}")
+    except Exception as exc:
+        print(f"⚠️ Không thể tạo raw provenance report: {exc}")
 
     # 4. Rebuild index va evaluate (Role 4 & Role 5)
     print("\n🗄️ Đang xây dựng lại Index cho tập dữ liệu bị bẩn (Role 4)...")
