@@ -1,0 +1,302 @@
+{
+  "generated_at_utc": "2026-08-06T05:16:07.876485+00:00",
+  "purpose": "Baseline signals and report-to-artifact validation checkpoint before Phase 2 corruption/repair.",
+  "completion_status": "PASSED",
+  "source_artifacts": {
+    "clean_csv": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean.csv",
+    "clean_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean.json",
+    "raw_records_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\raw\\crossref_records.json",
+    "embeddings_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\embeddings\\papers_embeddings.json",
+    "eval_testset": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\eval\\test_set.json",
+    "quality_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\quality\\baseline_quality.json",
+    "freshness_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\quality\\freshness_report.json",
+    "metrics_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\results\\baseline_metrics.json",
+    "answers_json": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\results\\baseline_answers.json",
+    "phase1_report": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\reports\\phase1_report.md"
+  },
+  "baseline_signals": {
+    "data_quality": {
+      "row_count": 22,
+      "paper_id_unique": true,
+      "paper_id_duplicate_count": 0,
+      "missing_title_rate": 0.0,
+      "missing_summary_rate": 0.0,
+      "row_duplicate_rate": 0.0,
+      "status": "PASSED"
+    },
+    "freshness": {
+      "is_fresh": true,
+      "stale_rows": 0,
+      "threshold_days": 180,
+      "latest_published": "2026-08-01T00:00:00",
+      "oldest_published": "2026-02-12T00:00:00",
+      "age_days_mean": 81.68181818181819,
+      "age_days_max": 175.0,
+      "age_days_min": 5.0
+    },
+    "rag_evaluation": {
+      "samples": 30,
+      "retrieval_hit_rate": 1.0,
+      "mean_token_f1": 1.0,
+      "judge_accuracy": 1.0,
+      "mean_judge_score": 5,
+      "ragas": {
+        "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+      }
+    },
+    "artifact_counts": {
+      "raw_records": 24,
+      "clean_rows": 22,
+      "embedding_documents": 22,
+      "test_set_samples": 30,
+      "answer_samples": 30
+    }
+  },
+  "validation_checks": [
+    {
+      "name": "clean CSV row count == clean JSON rows",
+      "source": "CSV vs JSON",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "clean CSV row count == quality row_count",
+      "source": "CSV vs quality JSON",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "quality report variants match row_count",
+      "source": "baseline_quality vs baseline_quality_checks",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "clean CSV row count == freshness total_rows",
+      "source": "CSV vs freshness JSON",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "clean CSV row count == embedding manifest documents",
+      "source": "CSV vs embeddings manifest",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "test set samples == metrics samples",
+      "source": "test set vs metrics JSON",
+      "expected": 30,
+      "actual": 30,
+      "passed": true
+    },
+    {
+      "name": "answers samples == metrics samples",
+      "source": "answers vs metrics JSON",
+      "expected": 30,
+      "actual": 30,
+      "passed": true
+    },
+    {
+      "name": "paper_id uniqueness count",
+      "source": "CSV vs quality JSON",
+      "expected": 22,
+      "actual": 22,
+      "passed": true
+    },
+    {
+      "name": "paper_id is unique",
+      "source": "CSV vs quality JSON",
+      "expected": true,
+      "actual": true,
+      "passed": true
+    },
+    {
+      "name": "paper_id duplicate count",
+      "source": "CSV vs quality JSON",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "name": "missing title count",
+      "source": "CSV vs quality JSON",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "name": "missing summary count",
+      "source": "CSV vs quality JSON",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "name": "row duplicate count",
+      "source": "CSV vs quality JSON",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "name": "latest published",
+      "source": "CSV vs freshness JSON",
+      "expected": "2026-08-01T00:00:00",
+      "actual": "2026-08-01T00:00:00",
+      "passed": true
+    },
+    {
+      "name": "oldest published",
+      "source": "CSV vs freshness JSON",
+      "expected": "2026-02-12T00:00:00",
+      "actual": "2026-02-12T00:00:00",
+      "passed": true
+    },
+    {
+      "name": "stale rows",
+      "source": "CSV vs freshness JSON",
+      "expected": 0,
+      "actual": 0,
+      "passed": true
+    },
+    {
+      "name": "report retrieval_hit_rate",
+      "source": "phase1_report.md vs JSON",
+      "expected": "100.00%",
+      "actual": "| **Retrieval Hit Rate** | **100.00%** | T\u1ef7 l\u1ec7 t\u00ecm ki\u1ebfm \u0111\u01b0\u1ee3c context ch\u1ee9a c\u00e2u tr\u1ea3 l\u1eddi \u0111\u00fang. |",
+      "passed": true
+    },
+    {
+      "name": "report mean_token_f1",
+      "source": "phase1_report.md vs JSON",
+      "expected": "1.0000",
+      "actual": "| **Mean Token F1** | **1.0000** | \u0110\u1ed9 t\u01b0\u01a1ng \u0111\u1ed3ng m\u1eb7t ch\u1eef gi\u1eefa c\u00e2u tr\u1ea3 l\u1eddi sinh ra v\u00e0 Ground Truth. |",
+      "passed": true
+    },
+    {
+      "name": "report judge_accuracy",
+      "source": "phase1_report.md vs JSON",
+      "expected": "100.00%",
+      "actual": "| **LLM Judge Accuracy** | **100.00%** | T\u1ef7 l\u1ec7 c\u00e2u tr\u1ea3 l\u1eddi \u0111\u01b0\u1ee3c LLM \u0111\u00e1nh gi\u00e1 \u0111\u1ea1t y\u00eau c\u1ea7u. |",
+      "passed": true
+    },
+    {
+      "name": "report mean_judge_score",
+      "source": "phase1_report.md vs JSON",
+      "expected": "5.00/5",
+      "actual": "| **Mean Judge Score** | **5.00/5** | \u0110i\u1ec3m s\u1ed1 ch\u1ea5t l\u01b0\u1ee3ng c\u00e2u tr\u1ea3 l\u1eddi trung b\u00ecnh. |",
+      "passed": true
+    },
+    {
+      "name": "report ragas",
+      "source": "phase1_report.md vs JSON",
+      "expected": "Skipped",
+      "actual": "| **RAGAS Score** | **Skipped** | \u0110i\u1ec3m \u0111\u00e1nh gi\u00e1 t\u1ed5ng h\u1ee3p RAGAS (n\u1ebfu c\u00f3). |",
+      "passed": true
+    },
+    {
+      "name": "report row_count",
+      "source": "phase1_report.md vs JSON",
+      "expected": "22",
+      "actual": "*   **T\u1ed5ng s\u1ed1 d\u00f2ng (Row Count)**: 22 b\u1ea3n ghi.",
+      "passed": true
+    },
+    {
+      "name": "report paper_id_unique",
+      "source": "phase1_report.md vs JSON",
+      "expected": "True",
+      "actual": "*   **T\u00ednh duy nh\u1ea5t c\u1ee7a `paper_id`**: `True` (S\u1ed1 b\u1ea3n ghi tr\u00f9ng l\u1eb7p ID: 0).",
+      "passed": true
+    },
+    {
+      "name": "report title_missing_rate",
+      "source": "phase1_report.md vs JSON",
+      "expected": "0.00%",
+      "actual": "*   Thi\u1ebfu `title`: 0.00%",
+      "passed": true
+    },
+    {
+      "name": "report summary_missing_rate",
+      "source": "phase1_report.md vs JSON",
+      "expected": "0.00%",
+      "actual": "*   Thi\u1ebfu `summary`: 0.00%",
+      "passed": true
+    },
+    {
+      "name": "report row_duplicate_rate",
+      "source": "phase1_report.md vs JSON",
+      "expected": "0.00%",
+      "actual": "*   **T\u1ef7 l\u1ec7 tr\u00f9ng l\u1eb7p d\u00f2ng (Row duplicates)**: 0.00%",
+      "passed": true
+    },
+    {
+      "name": "report quality_status",
+      "source": "phase1_report.md vs JSON",
+      "expected": "PASSED",
+      "actual": "*   **Tr\u1ea1ng th\u00e1i ki\u1ec3m tra (Status)**: `PASSED`",
+      "passed": true
+    },
+    {
+      "name": "report latest_published",
+      "source": "phase1_report.md vs JSON",
+      "expected": "2026-08-01T00:00:00",
+      "actual": "*   **Ng\u00e0y xu\u1ea5t b\u1ea3n m\u1edbi nh\u1ea5t (Latest Published)**: `2026-08-01T00:00:00`",
+      "passed": true
+    },
+    {
+      "name": "report oldest_published",
+      "source": "phase1_report.md vs JSON",
+      "expected": "2026-02-12T00:00:00",
+      "actual": "*   **Ng\u00e0y xu\u1ea5t b\u1ea3n c\u0169 nh\u1ea5t (Oldest Published)**: `2026-02-12T00:00:00`",
+      "passed": true
+    },
+    {
+      "name": "report stale_rows",
+      "source": "phase1_report.md vs JSON",
+      "expected": "0",
+      "actual": "*   **S\u1ed1 l\u01b0\u1ee3ng d\u00f2ng b\u1ecb stale (c\u0169 qu\u00e1 h\u1ea1n)**: 0",
+      "passed": true
+    },
+    {
+      "name": "report mean_age_days",
+      "source": "phase1_report.md vs JSON",
+      "expected": "81.7",
+      "actual": "*   **\u0110\u1ed9 tu\u1ed5i trung b\u00ecnh (`age_days`)**: 81.7 ng\u00e0y (L\u1edbn nh\u1ea5t: 175.0 ng\u00e0y, Nh\u1ecf nh\u1ea5t: 5.0 ng\u00e0y).",
+      "passed": true
+    },
+    {
+      "name": "report max_age_days",
+      "source": "phase1_report.md vs JSON",
+      "expected": "175.0",
+      "actual": "*   **\u0110\u1ed9 tu\u1ed5i trung b\u00ecnh (`age_days`)**: 81.7 ng\u00e0y (L\u1edbn nh\u1ea5t: 175.0 ng\u00e0y, Nh\u1ecf nh\u1ea5t: 5.0 ng\u00e0y).",
+      "passed": true
+    },
+    {
+      "name": "report min_age_days",
+      "source": "phase1_report.md vs JSON",
+      "expected": "5.0",
+      "actual": "*   **\u0110\u1ed9 tu\u1ed5i trung b\u00ecnh (`age_days`)**: 81.7 ng\u00e0y (L\u1edbn nh\u1ea5t: 175.0 ng\u00e0y, Nh\u1ecf nh\u1ea5t: 5.0 ng\u00e0y).",
+      "passed": true
+    },
+    {
+      "name": "report is_fresh",
+      "source": "phase1_report.md vs JSON",
+      "expected": "True",
+      "actual": "*   **Tr\u1ea1ng th\u00e1i t\u01b0\u01a1i m\u1edbi (Is Fresh)**: `True` (Ng\u01b0\u1ee1ng c\u1ea5u h\u00ecnh: 180 ng\u00e0y).",
+      "passed": true
+    },
+    {
+      "name": "report freshness_threshold",
+      "source": "phase1_report.md vs JSON",
+      "expected": "180",
+      "actual": "*   **Tr\u1ea1ng th\u00e1i t\u01b0\u01a1i m\u1edbi (Is Fresh)**: `True` (Ng\u01b0\u1ee1ng c\u1ea5u h\u00ecnh: 180 ng\u00e0y).",
+      "passed": true
+    }
+  ]
+}

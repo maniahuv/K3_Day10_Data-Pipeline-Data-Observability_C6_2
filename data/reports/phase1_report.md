@@ -21,7 +21,7 @@ Các chỉ số dưới đây được đánh giá trên tập câu hỏi chuẩ
 | **Mean Token F1** | **1.0000** | Độ tương đồng mặt chữ giữa câu trả lời sinh ra và Ground Truth. |
 | **LLM Judge Accuracy** | **100.00%** | Tỷ lệ câu trả lời được LLM đánh giá đạt yêu cầu. |
 | **Mean Judge Score** | **5.00/5** | Điểm số chất lượng câu trả lời trung bình. |
-| **RAGAS Score** | **N/A (Skipped)** | Điểm đánh giá tổng hợp RAGAS (nếu có). |
+| **RAGAS Score** | **Skipped** | Điểm đánh giá tổng hợp RAGAS (nếu có). |
 
 ---
 

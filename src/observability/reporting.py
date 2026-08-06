@@ -24,17 +24,18 @@ def generate_phase1_report(
     mean_token_f1 = metrics.get("mean_token_f1", 0.0)
     judge_accuracy = metrics.get("judge_accuracy", 0.0)
     mean_judge_score = metrics.get("mean_judge_score", 0.0)
-    ragas_data = metrics.get("ragas", {})
-    if isinstance(ragas_data, dict) and "skipped" in ragas_data:
-        ragas_score_str = "N/A (Skipped)"
-    elif isinstance(ragas_data, dict):
-        # Average of all values if possible
-        try:
-            ragas_score_str = f"{sum(ragas_data.values()) / len(ragas_data):.4f}"
-        except:
-            ragas_score_str = "N/A"
+    ragas_value = metrics.get("ragas", 0.0)
+    if isinstance(ragas_value, dict):
+        if "skipped" in ragas_value:
+            ragas_display = "Skipped"
+        elif "error" in ragas_value:
+            ragas_display = "Error"
+        else:
+            ragas_display = json.dumps(ragas_value, ensure_ascii=False)
+    elif isinstance(ragas_value, (int, float)):
+        ragas_display = f"{ragas_value:.4f}"
     else:
-        ragas_score_str = str(ragas_data)
+        ragas_display = str(ragas_value)
     
     # Quality info
     row_count = quality.get("row_count", 0)
@@ -83,7 +84,7 @@ Các chỉ số dưới đây được đánh giá trên tập câu hỏi chuẩ
 | **Mean Token F1** | **{mean_token_f1:.4f}** | Độ tương đồng mặt chữ giữa câu trả lời sinh ra và Ground Truth. |
 | **LLM Judge Accuracy** | **{judge_accuracy:.2%}** | Tỷ lệ câu trả lời được LLM đánh giá đạt yêu cầu. |
 | **Mean Judge Score** | **{mean_judge_score:.2f}/5** | Điểm số chất lượng câu trả lời trung bình. |
-| **RAGAS Score** | **{ragas_score_str}** | Điểm đánh giá tổng hợp RAGAS (nếu có). |
+| **RAGAS Score** | **{ragas_display}** | Điểm đánh giá tổng hợp RAGAS (nếu có). |
 
 ---
 
