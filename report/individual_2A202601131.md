@@ -8,12 +8,12 @@
 
 | Thông tin | Nội dung |
 | :--- | :--- |
-| **Họ và tên** | Nguyen Minh Nhat |
+| **Họ và tên** | Nguyễn Minh Nhật |
 | **MSSV** | 2A202601131 |
-| **Khóa / Lớp** | K3 / K4 |
+| **Khóa / Lớp** | K3 |
 | **Tên nhóm** | Nhóm 6 người |
 | **Vai trò chính** | **Role 5: Evaluation Owner (Phụ trách Đánh giá & Evaluation)** |
-| **Repository** | [Đường dẫn repository GitHub] |
+| **Repository** | https://github.com/maniahuv/K3_Day10_Data-Pipeline-Data-Observability_C6_2 |
 | **Ngày hoàn thành**| 2026-08-06 |
 
 ---
