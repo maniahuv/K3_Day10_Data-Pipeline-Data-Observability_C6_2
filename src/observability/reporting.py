@@ -130,6 +130,231 @@ def generate_corruption_report(
     corrupted_freshness: dict[str, Any],
     repaired_freshness: dict[str, Any],
 ) -> None:
-    """TODO(student): viet markdown report so sanh baseline/corrupted/repaired."""
-    raise NotImplementedError("Student task: implement corruption comparison report.")
+    """Write a comparison report that ties corrupted data signals to RAG metric movement."""
+
+    def metric_value(metrics: dict[str, Any], key: str) -> float | None:
+        value = metrics.get(key)
+        return float(value) if isinstance(value, (int, float)) else None
+
+    def fmt_number(value: float | int | None, digits: int = 4) -> str:
+        if value is None:
+            return "N/A"
+        return f"{float(value):.{digits}f}"
+
+    def fmt_percent(value: float | int | None) -> str:
+        if value is None:
+            return "N/A"
+        return f"{float(value):.2%}"
+
+    def fmt_delta(value: float | None, percent: bool = False) -> str:
+        if value is None:
+            return "N/A"
+        sign = "+" if value > 0 else ""
+        return f"{sign}{value:.2%}" if percent else f"{sign}{value:.4f}"
+
+    def nested(payload: dict[str, Any], *keys: str, default: Any = None) -> Any:
+        current: Any = payload
+        for key in keys:
+            if not isinstance(current, dict):
+                return default
+            current = current.get(key, default)
+        return current
+
+    def changed_label(delta: float | None, lower_is_worse: bool = False) -> str:
+        if delta is None:
+            return "not evaluated"
+        if abs(delta) < 1e-12:
+            return "unchanged"
+        if lower_is_worse:
+            return "improved" if delta < 0 else "degraded"
+        return "improved" if delta > 0 else "degraded"
+
+    report_path = Path(report_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+
+    quality_signals = [
+        (
+            "row_count",
+            "Row count",
+            float(
+                baseline_metrics.get(
+                    "source_row_count",
+                    corrupted_quality.get("baseline_row_count"),
+                )
+            )
+            if baseline_metrics.get("source_row_count") is not None
+            or corrupted_quality.get("baseline_row_count") is not None
+            else None,
+            float(corrupted_quality.get("row_count")) if corrupted_quality.get("row_count") is not None else None,
+            "drop_latest_record",
+            "Lower row count is evidence of record loss.",
+            False,
+        ),
+        (
+            "summary_missing_rate",
+            "Missing summary rate",
+            float(nested(corrupted_quality, "baseline_missing_fields", "summary", "missing_rate", default=0.0)),
+            float(nested(corrupted_quality, "missing_fields", "summary", "missing_rate", default=0.0)),
+            "blank_summary",
+            "Higher missing summary rate reduces evidence available to the embedding and answer.",
+            True,
+        ),
+        (
+            "paper_id_duplicate_count",
+            "Duplicate paper_id count",
+            float(nested(corrupted_quality, "baseline_paper_id_uniqueness", "duplicate_count", default=0)),
+            float(nested(corrupted_quality, "paper_id_uniqueness", "duplicate_count", default=0)),
+            "duplicate_record",
+            "Duplicate ids can crowd the retrieved context with repeated records.",
+            True,
+        ),
+        (
+            "row_duplicate_rate",
+            "Duplicate row rate",
+            float(nested(corrupted_quality, "baseline_row_duplicates", "duplicate_rate", default=0.0)),
+            float(nested(corrupted_quality, "row_duplicates", "duplicate_rate", default=0.0)),
+            "duplicate_record",
+            "Repeated rows make duplicate context measurable.",
+            True,
+        ),
+        (
+            "max_age_days",
+            "Max age_days",
+            float(nested(corrupted_quality, "baseline_age_days", "max"))
+            if nested(corrupted_quality, "baseline_age_days", "max") is not None
+            else None,
+            float(nested(corrupted_quality, "age_days", "max", default=0.0))
+            if nested(corrupted_quality, "age_days", "max") is not None
+            else None,
+            "age_published_date",
+            "Aged records are freshness risk evidence.",
+            True,
+        ),
+        (
+            "freshness_stale_rows",
+            "Freshness stale rows",
+            float(corrupted_freshness.get("baseline_stale_rows", 0)),
+            float(corrupted_freshness.get("stale_rows", 0)),
+            "age_published_date",
+            "Stale rows show freshness threshold impact.",
+            True,
+        ),
+        (
+            "text_for_embedding_missing_rate",
+            "Missing text_for_embedding rate",
+            float(
+                nested(
+                    corrupted_quality,
+                    "baseline_missing_fields",
+                    "text_for_embedding",
+                    "missing_rate",
+                    default=0.0,
+                )
+            ),
+            float(nested(corrupted_quality, "missing_fields", "text_for_embedding", "missing_rate", default=0.0)),
+            "blank_summary",
+            "Embedding text availability did not necessarily change when summary changed.",
+            True,
+        ),
+    ]
+
+    rag_metrics = [
+        ("retrieval_hit_rate", "Retrieval hit rate", True, "retrieval"),
+        ("mean_token_f1", "Mean token F1", False, "generation"),
+        ("judge_accuracy", "Judge accuracy", True, "generation"),
+        ("mean_judge_score", "Mean judge score", False, "generation"),
+    ]
+
+    changed_rag_rows: list[str] = []
+    unchanged_rag_rows: list[str] = []
+    for key, label, as_percent, impact_area in rag_metrics:
+        baseline = metric_value(baseline_metrics, key)
+        corrupted = metric_value(corrupted_metrics, key)
+        delta = corrupted - baseline if baseline is not None and corrupted is not None else None
+        status = changed_label(delta)
+        formatter = fmt_percent if as_percent else fmt_number
+        row = (
+            f"| {label} | {formatter(baseline)} | {formatter(corrupted)} | "
+            f"{fmt_delta(delta, percent=as_percent)} | {status} | {impact_area} |"
+        )
+        if status == "unchanged":
+            unchanged_rag_rows.append(row)
+        else:
+            changed_rag_rows.append(row)
+
+    changed_quality_rows: list[str] = []
+    unchanged_quality_rows: list[str] = []
+    for _, label, baseline, corrupted, evidence, note, lower_is_worse in quality_signals:
+        delta = corrupted - baseline if baseline is not None and corrupted is not None else None
+        status = changed_label(delta, lower_is_worse=lower_is_worse)
+        row = (
+            f"| {label} | {fmt_number(baseline)} | {fmt_number(corrupted)} | "
+            f"{fmt_delta(delta)} | {status} | {evidence} | {note} |"
+        )
+        if status == "unchanged":
+            unchanged_quality_rows.append(row)
+        else:
+            changed_quality_rows.append(row)
+
+    counts_by_type = corrupted_quality.get("corruption_counts_by_type", {})
+    events_count = corrupted_quality.get("corruption_event_count")
+    if events_count is None:
+        events_count = sum(counts_by_type.values()) if isinstance(counts_by_type, dict) else 0
+    evidence_lines = "\n".join(
+        f"- `{key}`: {value}" for key, value in sorted(counts_by_type.items())
+    ) or "- No corruption log evidence was attached to this report."
+
+    repaired_available = bool(repaired_metrics or repaired_quality or repaired_freshness)
+    repaired_note = (
+        "Repaired artifacts were available and can be compared in a follow-up repair section."
+        if repaired_available
+        else "Repaired artifacts were not available in this run, so this report only concludes baseline vs corrupted impact."
+    )
+
+    md_content = f"""# Corrupted Dataset Quality and RAG Impact Report
+
+This report is separate from the baseline report and uses the corrupted dataset artifacts.
+
+## Inputs
+- Baseline metrics samples: {baseline_metrics.get("samples", "N/A")}
+- Corrupted metrics samples: {corrupted_metrics.get("samples", "N/A")}
+- Corrupted quality status: `{corrupted_quality.get("status", "UNKNOWN")}`
+- Corrupted freshness status: `{corrupted_freshness.get("is_fresh", "UNKNOWN")}`
+- Corruption log events linked: {events_count}
+- Repair scope: {repaired_note}
+
+## Corruption Log Evidence
+{evidence_lines}
+
+## Data Quality Signals That Changed
+| Signal | Baseline | Corrupted | Delta | Status | Evidence | Interpretation |
+| :--- | ---: | ---: | ---: | :--- | :--- | :--- |
+{chr(10).join(changed_quality_rows) if changed_quality_rows else "| None | N/A | N/A | N/A | unchanged | N/A | No changed quality signals were observed. |"}
+
+## RAG Metrics With Evidence-Based Changes
+| Metric | Baseline | Corrupted | Delta | Status | Impact area |
+| :--- | ---: | ---: | ---: | :--- | :--- |
+{chr(10).join(changed_rag_rows) if changed_rag_rows else "| None | N/A | N/A | N/A | unchanged | N/A |"}
+
+## Signals That Did Not Change
+These signals are recorded explicitly to avoid over-claiming.
+
+### Data Quality
+| Signal | Baseline | Corrupted | Delta | Status | Evidence | Interpretation |
+| :--- | ---: | ---: | ---: | :--- | :--- | :--- |
+{chr(10).join(unchanged_quality_rows) if unchanged_quality_rows else "| None | N/A | N/A | N/A | unchanged | N/A | No unchanged quality signals were observed. |"}
+
+### RAG Metrics
+| Metric | Baseline | Corrupted | Delta | Status | Impact area |
+| :--- | ---: | ---: | ---: | :--- | :--- |
+{chr(10).join(unchanged_rag_rows) if unchanged_rag_rows else "| None | N/A | N/A | N/A | unchanged | N/A |"}
+
+## Conclusion
+The corrupted dataset has quality/freshness evidence linked to the corruption log, and only the RAG metrics with measured deltas are marked as changed. Retrieval hit rate is listed as unchanged when its delta is zero, so the report does not claim retrieval degradation without evidence. The observed degradation is concentrated in answer quality metrics when those metrics have a negative delta.
+"""
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(md_content)
+
+    print(f"Corruption report written successfully to {report_path}")
 
