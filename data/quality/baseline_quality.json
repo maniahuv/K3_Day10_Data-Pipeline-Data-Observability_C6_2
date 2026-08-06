@@ -1,20 +1,25 @@
 {
-    "source_timestamp": "2026-08-06T11:36:21.769973",
+    "source_timestamp": "2026-08-06T12:16:51.077469",
     "row_count": 22,
-    "null_counts": {
-        "paper_id": 0,
-        "title": 0,
-        "summary": 0,
-        "text_for_embedding": 0
+    "paper_id_uniqueness": {
+        "unique_count": 22,
+        "is_unique": true,
+        "duplicate_count": 0
     },
-    "null_rates": {
-        "paper_id": 0.0,
-        "title": 0.0,
-        "summary": 0.0,
-        "text_for_embedding": 0.0
+    "missing_fields": {
+        "title": {
+            "missing_count": 0,
+            "missing_rate": 0.0
+        },
+        "summary": {
+            "missing_count": 0,
+            "missing_rate": 0.0
+        }
     },
-    "duplicate_count": 0,
-    "duplicate_rate": 0.0,
+    "row_duplicates": {
+        "duplicate_count": 0,
+        "duplicate_rate": 0.0
+    },
     "age_days": {
         "mean": 81.68181818181819,
         "max": 175.0,
