@@ -1,0 +1,152 @@
+{
+  "status": "pass",
+  "query": "retrieval augmented generation large language model",
+  "baseline_rebuilt": false,
+  "corrupted_rebuilt": false,
+  "repaired_source": "D:\\AI thuc chien\\lab10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean_repaired.csv",
+  "repaired_rows": 22,
+  "collections": {
+    "baseline": "papers-baseline",
+    "corrupted": "papers-corrupted",
+    "repaired": "papers-repaired"
+  },
+  "embedding_manifest_paths": {
+    "baseline": "D:\\AI thuc chien\\lab10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\embeddings\\papers_embeddings.json",
+    "corrupted": "D:\\AI thuc chien\\lab10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\embeddings\\papers_embeddings_corrupted.json",
+    "repaired": "D:\\AI thuc chien\\lab10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\embeddings\\papers_embeddings_repaired.json"
+  },
+  "collections_ok": true,
+  "paths_distinct": true,
+  "baseline_top_ids": [
+    "10.55041/isjem07213",
+    "10.20944/preprints202604.0339.v1",
+    "10.35314/3y9hy151"
+  ],
+  "corrupted_top_ids": [
+    "10.55041/isjem07213",
+    "10.20944/preprints202604.0339.v1",
+    "10.35314/3y9hy151"
+  ],
+  "repaired_top_ids": [
+    "10.55041/isjem07213",
+    "10.20944/preprints202604.0339.v1",
+    "10.35314/3y9hy151"
+  ],
+  "baseline_results": [
+    {
+      "paper_id": "10.55041/isjem07213",
+      "title": "Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference",
+      "score": 0.6642944812774658,
+      "content_preview": "Title: Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference\r\nSummary: Abstract - This work focuses on the two crucial bottlenecks in Retrieval-Augmented Generation (RAG): high inference latency and expensive computation "
+    },
+    {
+      "paper_id": "10.20944/preprints202604.0339.v1",
+      "title": "Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation",
+      "score": 0.6264678239822388,
+      "content_preview": "Title: Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation\r\nSummary: This study investigates a method that integrates retrieval-augmented mechanisms into large language model agents for scientific literature re"
+    },
+    {
+      "paper_id": "10.35314/3y9hy151",
+      "title": "Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot",
+      "score": 0.6147408485412598,
+      "content_preview": "Title: Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot\r\nSummary: Large language models have the potential to improve the quality of information services in higher educati"
+    }
+  ],
+  "corrupted_results": [
+    {
+      "paper_id": "10.55041/isjem07213",
+      "title": "Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference",
+      "score": 0.6642944812774658,
+      "content_preview": "Title: Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference\r\nSummary: Abstract - This work focuses on the two crucial bottlenecks in Retrieval-Augmented Generation (RAG): high inference latency and expensive computation "
+    },
+    {
+      "paper_id": "10.20944/preprints202604.0339.v1",
+      "title": "Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation",
+      "score": 0.6264678239822388,
+      "content_preview": "Title: Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation\r\nSummary: This study investigates a method that integrates retrieval-augmented mechanisms into large language model agents for scientific literature re"
+    },
+    {
+      "paper_id": "10.35314/3y9hy151",
+      "title": "Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot",
+      "score": 0.6147408485412598,
+      "content_preview": "Title: Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot\r\nSummary: Large language models have the potential to improve the quality of information services in higher educati"
+    }
+  ],
+  "repaired_results": [
+    {
+      "paper_id": "10.55041/isjem07213",
+      "title": "Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference",
+      "score": 0.6642944812774658,
+      "content_preview": "Title: Speculative Retrieval-Augmented Generation for Cost-Efficient Large Language Model Inference\r\nSummary: Abstract - This work focuses on the two crucial bottlenecks in Retrieval-Augmented Generation (RAG): high inference latency and expensive computation "
+    },
+    {
+      "paper_id": "10.20944/preprints202604.0339.v1",
+      "title": "Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation",
+      "score": 0.6264678239822388,
+      "content_preview": "Title: Retrieval-Augmented Large Language Model Agents for Automated Scientific Literature Review Generation\r\nSummary: This study investigates a method that integrates retrieval-augmented mechanisms into large language model agents for scientific literature re"
+    },
+    {
+      "paper_id": "10.35314/3y9hy151",
+      "title": "Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot",
+      "score": 0.6147408485412598,
+      "content_preview": "Title: Implementation of Retrieval-Augmented Generation Method on Large Language Model for Development of Campus Service and Information Chatbot\r\nSummary: Large language models have the potential to improve the quality of information services in higher educati"
+    }
+  ],
+  "repaired_lookup": {
+    "paper_id": "10.2118/234689-pa",
+    "title": "SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation",
+    "found": true
+  },
+  "agent_smoke": {
+    "llm_provider": "gemini",
+    "llm_model": "gemini-flash-lite-latest",
+    "question": "Who authored 'SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation'?",
+    "used_tool_before_answer": true,
+    "returned_repaired_doc": true,
+    "final_answer": "The paper *\"SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation\"* was authored by:\n\n* **Qianwen Cao**\n* **Chiyu Zhang**\n* **Junxiong Ning**\n* **Gongru Li**",
+    "messages": [
+      {
+        "type": "human",
+        "class": "HumanMessage",
+        "name": null,
+        "has_tool_calls": false,
+        "tool_calls": [],
+        "content_preview": "Who authored 'SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation'?"
+      },
+      {
+        "type": "ai",
+        "class": "AIMessage",
+        "name": "paper_corpus_agent",
+        "has_tool_calls": true,
+        "tool_calls": [
+          {
+            "name": "semantic_search_papers",
+            "args": {
+              "query": "SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation",
+              "top_k": 5
+            },
+            "id": "1jtin31q",
+            "type": "tool_call"
+          }
+        ],
+        "content_preview": "[]"
+      },
+      {
+        "type": "tool",
+        "class": "ToolMessage",
+        "name": "semantic_search_papers",
+        "has_tool_calls": false,
+        "tool_calls": [],
+        "content_preview": "paper_id: 10.2118/234689-pa\ntitle: SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation\nscore: 0.7235\nTitle: SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation\r\nSummary: Summary In high-risk industrial settings, leveraging large language models (LLMs) for automated accident analysis and generating safety reports has emerged as an efficient workflow. However, this approach is fundamentally constrained by the models\u2019 inherent knowledge limitations, frequently re"
+      },
+      {
+        "type": "ai",
+        "class": "AIMessage",
+        "name": "paper_corpus_agent",
+        "has_tool_calls": false,
+        "tool_calls": [],
+        "content_preview": "[{'type': 'text', 'text': 'The paper *\"SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation\"* was authored by:\\n\\n* **Qianwen Cao**\\n* **Chiyu Zhang**\\n* **Junxiong Ning**\\n* **Gongru Li**', 'extras': {'signature': 'EjQKMgERTTIPopFNdN36BlzslOKGLmi+BYMr4/MI+xRtixBpX8suyT3snXyu2Yp7au59UimL'}}]"
+      }
+    ]
+  }
+}
