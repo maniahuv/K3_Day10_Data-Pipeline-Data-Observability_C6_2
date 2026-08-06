@@ -1,0 +1,42 @@
+{
+  "drop_latest_record": {
+    "pass": true,
+    "expected_dropped": 2,
+    "still_present": []
+  },
+  "blank_summary": {
+    "pass": true,
+    "expected_blank": [
+      "10.21203/rs.3.rs-10178277/v1"
+    ],
+    "actual_blank_count": 1
+  },
+  "inject_noise": {
+    "pass": true,
+    "expected_noisy": [
+      "10.2196/preprints.106157"
+    ],
+    "actual_noisy_count": 1
+  },
+  "truncate_title": {
+    "pass": true
+  },
+  "age_published_date": {
+    "pass": true
+  },
+  "duplicate_record": {
+    "pass": true,
+    "expected_duplicated": [
+      "10.21203/rs.3.rs-10012178/v1"
+    ],
+    "actual_duplicated_count": 1
+  },
+  "row_counts": {
+    "pass": true,
+    "log_input": 22,
+    "log_output": 21,
+    "actual_baseline": 22,
+    "actual_corrupted": 21
+  },
+  "all_passed": true
+}

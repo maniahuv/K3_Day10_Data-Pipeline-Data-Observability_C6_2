@@ -1,9 +1,81 @@
 {
-  "timestamp": "2026-08-06T05:38:41.129663+00:00",
-  "total_records_before": 22,
-  "actions": [
-    "Blanked summary for 6 records.",
-    "Injected noise text into records."
-  ],
-  "total_records_after": 22
+  "input_rows": 22,
+  "output_rows": 21,
+  "counts_by_type": {
+    "drop_latest_record": 2,
+    "blank_summary": 1,
+    "inject_noise": 1,
+    "truncate_title": 1,
+    "age_published_date": 1,
+    "duplicate_record": 1
+  },
+  "events": [
+    {
+      "record_id": "10.2118/234689-pa",
+      "type": "drop_latest_record",
+      "parameter": {
+        "selection": "latest_published",
+        "drop_count": 2
+      },
+      "before_count": 22,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.1007/s10278-026-02086-9",
+      "type": "drop_latest_record",
+      "parameter": {
+        "selection": "latest_published",
+        "drop_count": 2
+      },
+      "before_count": 22,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.21203/rs.3.rs-10178277/v1",
+      "type": "blank_summary",
+      "parameter": {
+        "replacement": ""
+      },
+      "before_count": 20,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.2196/preprints.106157",
+      "type": "inject_noise",
+      "parameter": {
+        "token": "[CORRUPTED_NOISE: synthetic-token]"
+      },
+      "before_count": 20,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.3390/buildings16132637",
+      "type": "truncate_title",
+      "parameter": {
+        "max_characters": 48,
+        "original_characters": 127
+      },
+      "before_count": 20,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.63646/kpqm1958",
+      "type": "age_published_date",
+      "parameter": {
+        "days_added": 365
+      },
+      "before_count": 20,
+      "after_count": 20
+    },
+    {
+      "record_id": "10.21203/rs.3.rs-10012178/v1",
+      "type": "duplicate_record",
+      "parameter": {
+        "source_row_index": 4,
+        "copies_added": 1
+      },
+      "before_count": 20,
+      "after_count": 21
+    }
+  ]
 }
