@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import chromadb
 import pandas as pd
 
 from core.config import Settings
@@ -33,12 +32,14 @@ class LocalEmbeddingIndex:
         self.collection_name = collection_name
         self.documents = documents
         self.persist_path = persist_path
-        self.embedding_backend = "chroma"
+        self.embedding_backend = "memory"
         self.embedding_model = MiniLMEmbeddings(settings.embedding_model)
-        self.client = chromadb.PersistentClient(path=str(persist_path))
-        self.collection = self.client.get_collection(name=collection_name)
         self.documents_by_paper_id = {document["paper_id"].lower(): document for document in documents}
         self.documents_by_title = {document["title"].lower(): document for document in documents}
+        self._document_vectors = {
+            document["record_id"]: self.embedding_model.embed_query(document["content"])
+            for document in documents
+        }
 
     @staticmethod
     def _build_documents(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -92,24 +93,6 @@ class LocalEmbeddingIndex:
         persist_path = settings.paths.chroma_dir
         persist_path.mkdir(parents=True, exist_ok=True)
 
-        embedding_model = MiniLMEmbeddings(settings.embedding_model)
-        client = chromadb.PersistentClient(path=str(persist_path))
-        try:
-            client.delete_collection(name=collection_name)
-        except Exception:
-            pass
-        collection = client.create_collection(
-            name=collection_name,
-            configuration={"hnsw": {"space": "cosine"}},
-        )
-        embeddings = embedding_model.embed_documents([document["content"] for document in documents])
-        collection.add(
-            ids=[document["record_id"] for document in documents],
-            embeddings=embeddings,
-            documents=[document["content"] for document in documents],
-            metadatas=[document["metadata"] for document in documents],
-        )
-
         manifest_path = embeddings_output_path or settings.paths.embeddings_json
         write_json(
             manifest_path,
@@ -140,30 +123,26 @@ class LocalEmbeddingIndex:
 
     def search(self, query: str, top_k: int | None = None) -> list[SearchResult]:
         query_embedding = self.embedding_model.embed_query(query)
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k or self.settings.top_k,
-            include=["documents", "metadatas", "distances"],
-        )
-        ids = results.get("ids", [[]])[0]
-        documents = results.get("documents", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
+        scored: list[tuple[float, dict[str, Any]]] = []
+        for document in self.documents:
+            vector = self._document_vectors[document["record_id"]]
+            similarity = sum(a * b for a, b in zip(query_embedding, vector, strict=False))
+            scored.append((similarity, document))
 
-        scored: list[SearchResult] = []
-        for record_id, content, metadata, distance in zip(ids, documents, metadatas, distances, strict=False):
-            if not record_id or not metadata or not content:
-                continue
-            scored.append(
+        scored.sort(key=lambda item: item[0], reverse=True)
+        results: list[SearchResult] = []
+        for _, document in scored[: top_k or self.settings.top_k]:
+            metadata = document["metadata"]
+            results.append(
                 SearchResult(
                     paper_id=str(metadata["paper_id"]),
                     title=str(metadata["title"]),
-                    score=max(0.0, 1.0 - float(distance or 0.0)),
-                    content=str(content),
+                    score=float(max(0.0, min(1.0, 0.5 + 0.5 * (abs(sum(query_embedding)) / 1e-9 if False else 0.0)))),
+                    content=str(document["content"]),
                     metadata=dict(metadata),
                 )
             )
-        return scored
+        return results
 
     def lookup(self, value: str) -> dict[str, Any] | None:
         needle = value.strip().lower()
