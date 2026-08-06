@@ -57,32 +57,101 @@
   "rag_metric_deltas": {
     "retrieval_hit_rate": {
       "baseline": 1.0,
-      "corrupted": 1.0,
+      "corrupted": 0.8,
+      "delta": -0.19999999999999996,
+      "status": "decreased"
+    },
+    "mean_token_f1": {
+      "baseline": 1.0,
+      "corrupted": 0.7426356589147287,
+      "delta": -0.2573643410852713,
+      "status": "decreased"
+    },
+    "judge_accuracy": {
+      "baseline": 1.0,
+      "corrupted": 0.7333333333333333,
+      "delta": -0.2666666666666667,
+      "status": "decreased"
+    },
+    "mean_judge_score": {
+      "baseline": 5,
+      "corrupted": 4.133333333333334,
+      "delta": -0.8666666666666663,
+      "status": "decreased"
+    }
+  },
+  "interpretation_guardrail": "Only metrics with measured deltas are treated as changed; unchanged signals are listed explicitly to avoid over-claiming.",
+  "unchanged_signals": [
+    "text_for_embedding_missing_rate"
+  ],
+  "repaired_quality_signal_deltas": {
+    "row_count": {
+      "baseline": 22,
+      "repaired": 22,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "summary_missing_rate": {
+      "baseline": 0.0,
+      "repaired": 0.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "paper_id_duplicate_count": {
+      "baseline": 0,
+      "repaired": 0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "row_duplicate_rate": {
+      "baseline": 0.0,
+      "repaired": 0.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "max_age_days": {
+      "baseline": 175.0,
+      "repaired": 175.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "freshness_stale_rows": {
+      "baseline": 0,
+      "repaired": 0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "text_for_embedding_missing_rate": {
+      "baseline": 0.0,
+      "repaired": 0.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    }
+  },
+  "repaired_rag_metric_deltas": {
+    "retrieval_hit_rate": {
+      "baseline": 1.0,
+      "repaired": 1.0,
       "delta": 0.0,
       "status": "unchanged"
     },
     "mean_token_f1": {
       "baseline": 1.0,
-      "corrupted": 0.7,
-      "delta": -0.30000000000000004,
-      "status": "decreased"
+      "repaired": 1.0,
+      "delta": 0.0,
+      "status": "unchanged"
     },
     "judge_accuracy": {
       "baseline": 1.0,
-      "corrupted": 0.8,
-      "delta": -0.19999999999999996,
-      "status": "decreased"
+      "repaired": 1.0,
+      "delta": 0.0,
+      "status": "unchanged"
     },
     "mean_judge_score": {
       "baseline": 5,
-      "corrupted": 4.233333333333333,
-      "delta": -0.7666666666666666,
-      "status": "decreased"
+      "repaired": 5,
+      "delta": 0.0,
+      "status": "unchanged"
     }
-  },
-  "unchanged_signals": [
-    "text_for_embedding_missing_rate",
-    "retrieval_hit_rate"
-  ],
-  "interpretation_guardrail": "Only metrics with measured deltas are treated as changed; unchanged signals are listed explicitly to avoid over-claiming."
+  }
 }

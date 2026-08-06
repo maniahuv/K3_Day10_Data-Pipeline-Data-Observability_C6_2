@@ -358,3 +358,206 @@ The corrupted dataset has quality/freshness evidence linked to the corruption lo
 
     print(f"Corruption report written successfully to {report_path}")
 
+
+def generate_full_comparison_report(
+    report_path,
+    baseline_metrics: dict[str, Any],
+    corrupted_metrics: dict[str, Any],
+    repaired_metrics: dict[str, Any],
+    baseline_quality: dict[str, Any],
+    corrupted_quality: dict[str, Any],
+    repaired_quality: dict[str, Any],
+    baseline_freshness: dict[str, Any],
+    corrupted_freshness: dict[str, Any],
+    repaired_freshness: dict[str, Any],
+    corruption_log: dict[str, Any],
+) -> None:
+    """Write a baseline/corrupted/repaired comparison from persisted artifacts."""
+
+    def nested(payload: dict[str, Any], *keys: str, default: Any = None) -> Any:
+        current: Any = payload
+        for key in keys:
+            if not isinstance(current, dict):
+                return default
+            current = current.get(key, default)
+        return current
+
+    def metric(payload: dict[str, Any], key: str) -> float | None:
+        value = payload.get(key)
+        return float(value) if isinstance(value, (int, float)) else None
+
+    def quality_value(payload: dict[str, Any], key: str) -> float | str | None:
+        mapping = {
+            "row_count": ("row_count",),
+            "summary_missing_rate": ("missing_fields", "summary", "missing_rate"),
+            "text_for_embedding_missing_rate": ("missing_fields", "text_for_embedding", "missing_rate"),
+            "paper_id_duplicate_count": ("paper_id_uniqueness", "duplicate_count"),
+            "row_duplicate_rate": ("row_duplicates", "duplicate_rate"),
+            "max_age_days": ("age_days", "max"),
+            "quality_status": ("status",),
+        }
+        return nested(payload, *mapping[key])
+
+    def freshness_value(payload: dict[str, Any], key: str) -> float | bool | None:
+        return payload.get(key)
+
+    def fmt(value: Any, percent: bool = False) -> str:
+        if value is None:
+            return "N/A"
+        if isinstance(value, bool):
+            return str(value)
+        if isinstance(value, (int, float)):
+            return f"{value:.2%}" if percent else f"{value:.4f}"
+        return str(value)
+
+    def delta(new_value: Any, old_value: Any, percent: bool = False) -> str:
+        if isinstance(new_value, bool) or isinstance(old_value, bool):
+            return "N/A"
+        if not isinstance(new_value, (int, float)) or not isinstance(old_value, (int, float)):
+            return "N/A"
+        value = float(new_value) - float(old_value)
+        sign = "+" if value > 0 else ""
+        return f"{sign}{value:.2%}" if percent else f"{sign}{value:.4f}"
+
+    def is_bad_metric(repaired: float | None, baseline: float | None) -> bool:
+        if repaired is None or baseline is None:
+            return False
+        return repaired + 1e-12 < baseline
+
+    def is_bad_quality(key: str, repaired: Any, baseline: Any) -> bool:
+        if key == "quality_status":
+            return repaired != baseline
+        if key == "row_count":
+            return repaired != baseline
+        if not isinstance(repaired, (int, float)) or not isinstance(baseline, (int, float)):
+            return False
+        return repaired > baseline + 1e-12
+
+    def is_bad_freshness(key: str, repaired: Any, baseline: Any) -> bool:
+        if key == "is_fresh":
+            return repaired != baseline
+        if not isinstance(repaired, (int, float)) or not isinstance(baseline, (int, float)):
+            return False
+        return repaired > baseline + 1e-12
+
+    metric_specs = [
+        ("retrieval_hit_rate", "Retrieval hit rate", True),
+        ("mean_token_f1", "Mean token F1", False),
+        ("judge_accuracy", "Judge accuracy", True),
+        ("mean_judge_score", "Mean judge score", False),
+    ]
+    quality_specs = [
+        ("row_count", "Row count", False),
+        ("summary_missing_rate", "Summary missing rate", True),
+        ("text_for_embedding_missing_rate", "Embedding text missing rate", True),
+        ("paper_id_duplicate_count", "Duplicate paper_id count", False),
+        ("row_duplicate_rate", "Duplicate row rate", True),
+        ("max_age_days", "Max age_days", False),
+        ("quality_status", "Quality status", False),
+    ]
+    freshness_specs = [
+        ("stale_rows", "Stale rows", False),
+        ("is_fresh", "Is fresh", False),
+    ]
+
+    metric_rows = []
+    incomplete_recovery: list[str] = []
+    for key, label, percent in metric_specs:
+        baseline = metric(baseline_metrics, key)
+        corrupted = metric(corrupted_metrics, key)
+        repaired = metric(repaired_metrics, key)
+        if is_bad_metric(repaired, baseline):
+            incomplete_recovery.append(f"{label}: repaired {fmt(repaired, percent)} below baseline {fmt(baseline, percent)}")
+        metric_rows.append(
+            f"| {label} | {fmt(baseline, percent)} | {fmt(corrupted, percent)} | "
+            f"{fmt(repaired, percent)} | {delta(corrupted, baseline, percent)} | "
+            f"{delta(repaired, baseline, percent)} |"
+        )
+
+    quality_rows = []
+    for key, label, percent in quality_specs:
+        baseline = quality_value(baseline_quality, key)
+        corrupted = quality_value(corrupted_quality, key)
+        repaired = quality_value(repaired_quality, key)
+        if is_bad_quality(key, repaired, baseline):
+            incomplete_recovery.append(f"{label}: repaired {fmt(repaired, percent)} not back to baseline {fmt(baseline, percent)}")
+        quality_rows.append(
+            f"| {label} | {fmt(baseline, percent)} | {fmt(corrupted, percent)} | "
+            f"{fmt(repaired, percent)} | {delta(corrupted, baseline, percent)} | "
+            f"{delta(repaired, baseline, percent)} |"
+        )
+
+    freshness_rows = []
+    for key, label, percent in freshness_specs:
+        baseline = freshness_value(baseline_freshness, key)
+        corrupted = freshness_value(corrupted_freshness, key)
+        repaired = freshness_value(repaired_freshness, key)
+        if is_bad_freshness(key, repaired, baseline):
+            incomplete_recovery.append(f"{label}: repaired {fmt(repaired, percent)} not back to baseline {fmt(baseline, percent)}")
+        freshness_rows.append(
+            f"| {label} | {fmt(baseline, percent)} | {fmt(corrupted, percent)} | "
+            f"{fmt(repaired, percent)} | {delta(corrupted, baseline, percent)} | "
+            f"{delta(repaired, baseline, percent)} |"
+        )
+
+    counts_by_type = corruption_log.get("counts_by_type", {})
+    evidence_lines = "\n".join(
+        f"- `{key}`: {value}" for key, value in sorted(counts_by_type.items())
+    ) or "- No event-level corruption log was available."
+    event_count = len(corruption_log.get("events", []))
+
+    if incomplete_recovery:
+        recovery_status = "Recovery is not complete for the observed artifacts."
+        recovery_lines = "\n".join(f"- {item}" for item in incomplete_recovery)
+    else:
+        recovery_status = "Recovery is complete for the measured signals and metrics in this run."
+        recovery_lines = "- No repaired quality, freshness, or evaluation metric remains worse than baseline."
+
+    md_content = f"""# Baseline vs Corrupted vs Repaired Comparison
+
+This report is generated from persisted metrics, data quality, freshness, and corruption log artifacts.
+
+## Artifact Scope
+- Baseline metrics samples: {baseline_metrics.get("samples", "N/A")}
+- Corrupted metrics samples: {corrupted_metrics.get("samples", "N/A")}
+- Repaired metrics samples: {repaired_metrics.get("samples", "N/A")}
+- Corruption events linked: {event_count}
+- Baseline quality status: `{baseline_quality.get("status", "UNKNOWN")}`
+- Corrupted quality status: `{corrupted_quality.get("status", "UNKNOWN")}`
+- Repaired quality status: `{repaired_quality.get("status", "UNKNOWN")}`
+
+## Corruption Evidence
+{evidence_lines}
+
+## Evaluation Metrics
+| Metric | Baseline | Corrupted | Repaired | Corrupted - Baseline | Repaired - Baseline |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+{chr(10).join(metric_rows)}
+
+## Data Quality Signals
+| Signal | Baseline | Corrupted | Repaired | Corrupted - Baseline | Repaired - Baseline |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+{chr(10).join(quality_rows)}
+
+## Freshness Signals
+| Signal | Baseline | Corrupted | Repaired | Corrupted - Baseline | Repaired - Baseline |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+{chr(10).join(freshness_rows)}
+
+## Recovery Assessment
+{recovery_status}
+
+{recovery_lines}
+
+## Conclusion Limits
+- This is an artifact-level comparison over the current fixed test set and current persisted datasets; it is not a statistical proof across future data.
+- RAGAS was skipped in the metrics artifacts, so the conclusion is limited to retrieval hit rate, token F1, judge accuracy, and judge score.
+- The corruption log explains the intended data faults, but it does not isolate one fault at a time. Metric movement should be attributed to the corrupted dataset as a bundle, not to a single event without an ablation.
+- If future repaired artifacts leave any quality, freshness, or evaluation signal worse than baseline, recovery must be reported as incomplete.
+"""
+
+    report_path = Path(report_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(md_content, encoding="utf-8")
+    print(f"Full comparison report written successfully to {report_path}")
+
