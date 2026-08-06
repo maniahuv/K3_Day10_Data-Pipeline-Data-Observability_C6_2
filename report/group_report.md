@@ -5,7 +5,7 @@
 | Thông tin         | Nội dung                  |
 | ------------------ | -------------------------- |
 | Khóa/Lớp         | K3                         |
-| Tên nhóm         | Nhóm 6 người               |
+| Tên nhóm         | C6_2               |
 | Repository         | https://github.com/maniahuv/K3_Day10_Data-Pipeline-Data-Observability_C6_2 |
 | Ngày hoàn thành | 2026-08-06                 |
 
