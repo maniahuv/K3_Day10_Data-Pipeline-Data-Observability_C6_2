@@ -66,8 +66,7 @@ def main() -> None:
         corrupted_index = LocalEmbeddingIndex.build(
             df=corrupted_df,
             settings=settings,
-            embeddings_output_path=settings.paths.corrupted_embeddings_json,
-            collection_name=settings.corrupted_collection_name
+            embeddings_output_path=settings.paths.corrupted_embeddings_json
         )
         print(f"✅ Đã tạo Index mới riêng biệt: {settings.corrupted_collection_name}")
     except Exception as e:
@@ -101,4 +100,88 @@ def main() -> None:
         sys.exit(1)
 
     print("\n🎉 [Checkpoint 5]: Role 1 đã dàn xếp xong kịch bản Corruption.")
-    print("🚧 Hiện tại kịch bản có thể chạy thông suốt, nhưng hãy đợi Role 3 implement logic phá hoại dữ liệu!")
+    
+    # --- BẮT ĐẦU CHECKPOINT 6 ---
+    print("\n🚀 [CP6] Bắt đầu luồng Phục hồi (Repair) & So sánh (Role 1)")
+
+    # 6. Repair lai tu raw records (Role 2 & 3)
+    print("\n🔧 Đang phục hồi dữ liệu từ nguồn Raw (Role 2 & 3)...")
+    from ingestion.crossref import load_raw_records
+    from ingestion.cleaning import build_clean_dataframe
+    from datetime import datetime, UTC
+    import json
+    
+    try:
+        raw_records = load_raw_records(settings.paths.raw_records_json)
+        # Giả lập thời gian chạy (run_date) để phục hồi giống baseline nhất có thể
+        run_date = datetime.now(UTC)
+        repaired_df = build_clean_dataframe(raw_records, run_date)
+        print(f"✅ Đã phục hồi xong. Số bản ghi hiện tại: {len(repaired_df)}")
+        
+        # Save repaired artifacts
+        settings.paths.repaired_clean_json.parent.mkdir(parents=True, exist_ok=True)
+        repaired_df.to_json(settings.paths.repaired_clean_json, orient="records", force_ascii=False, indent=2)
+        repaired_df.to_csv(settings.paths.repaired_clean_csv, index=False)
+        print(f"💾 Đã lưu repaired dataset vào {settings.paths.repaired_clean_json.name}")
+    except Exception as e:
+        print(f"❌ Lỗi khi phục hồi dữ liệu: {e}")
+        sys.exit(1)
+
+    # 7. Rebuild Index & Evaluate Repaired dataset (Role 4 & 5)
+    print("\n🗄️ Đang xây dựng lại Index cho tập dữ liệu đã phục hồi (Role 4)...")
+    try:
+        repaired_index = LocalEmbeddingIndex.build(
+            df=repaired_df,
+            settings=settings,
+            embeddings_output_path=settings.paths.repaired_embeddings_json
+        )
+        print(f"✅ Đã tạo Index mới riêng biệt: {settings.repaired_collection_name}")
+    except Exception as e:
+        print(f"❌ Lỗi khi tạo Index repaired: {e}")
+        sys.exit(1)
+
+    print("\n⚖️ Đang Evaluate Agent trên dữ liệu đã phục hồi (Role 5)...")
+    try:
+        repaired_bundle = evaluate_pipeline(
+            settings=settings,
+            index=repaired_index,
+            test_set_path=settings.paths.eval_testset,
+            metrics_output_path=settings.paths.repaired_metrics,
+            answers_output_path=settings.paths.repaired_answers
+        )
+        print(f"📈 Kết quả Repaired - Hit Rate: {repaired_bundle.summary.get('retrieval_hit_rate'):.2%} | Token F1: {repaired_bundle.summary.get('mean_token_f1'):.4f}")
+    except Exception as e:
+        print(f"❌ Lỗi khi evaluate repaired data: {e}")
+        sys.exit(1)
+        
+    print("\n🔎 Đang thu thập tín hiệu Quality & Freshness trên tập phục hồi (Role 6)...")
+    try:
+        repaired_quality = run_data_quality_checks(repaired_df, settings, report_name="repaired_quality")
+        repaired_freshness = build_freshness_report(repaired_df, settings, report_path=settings.paths.quality_dir / "repaired_freshness_report.json")
+    except Exception as e:
+        print(f"❌ Lỗi khi chạy Quality Check trên repaired data: {e}")
+        sys.exit(1)
+
+    # 8. Tao comparison report (Role 6)
+    print("\n📄 Đang tạo Báo cáo So sánh Baseline - Corrupted - Repaired (Role 6)...")
+    from observability.reporting import generate_corruption_report
+    try:
+        with open(settings.paths.baseline_metrics, "r", encoding="utf-8") as f:
+            baseline_metrics = json.load(f)
+            
+        generate_corruption_report(
+            report_path=settings.paths.comparison_report,
+            baseline_metrics=baseline_metrics,
+            corrupted_metrics=eval_bundle.summary,
+            repaired_metrics=repaired_bundle.summary,
+            corrupted_quality=corrupted_quality,
+            repaired_quality=repaired_quality,
+            corrupted_freshness=corrupted_freshness,
+            repaired_freshness=repaired_freshness
+        )
+        print(f"✅ Đã tạo Báo cáo So sánh tại: {settings.paths.comparison_report}")
+    except Exception as e:
+        print(f"❌ Lỗi khi sinh Báo cáo So sánh: {e}")
+        sys.exit(1)
+
+    print("\n🎉 [Checkpoint 6]: Hoàn tất toàn bộ chu trình Data Pipeline & Observability!")
