@@ -1,0 +1,33 @@
+{
+    "source_timestamp": "2026-08-06T11:45:47.980154",
+    "row_count": 22,
+    "paper_id_uniqueness": {
+        "unique_count": 22,
+        "is_unique": true,
+        "duplicate_count": 0
+    },
+    "missing_fields": {
+        "title": {
+            "missing_count": 0,
+            "missing_rate": 0.0
+        },
+        "summary": {
+            "missing_count": 0,
+            "missing_rate": 0.0
+        }
+    },
+    "row_duplicates": {
+        "duplicate_count": 0,
+        "duplicate_rate": 0.0
+    },
+    "age_days": {
+        "mean": 81.68181818181819,
+        "max": 175.0,
+        "min": 5.0
+    },
+    "summary_length": {
+        "mean": 1777.7727272727273,
+        "min": 1095.0
+    },
+    "status": "PASSED"
+}

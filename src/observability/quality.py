@@ -11,30 +11,46 @@ import json
 from pathlib import Path
 
 def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: str) -> dict[str, Any]:
-    """Chạy các kiểm tra chất lượng dữ liệu: row count, null, duplicate, age_days, source timestamp.
+    """Chạy các kiểm tra chất lượng dữ liệu: row count, paper_id unique, title/summary missing và duplicate.
     Ghi kết quả vào thư mục `data/quality/`.
     """
-    # 1. Row count
     total_rows = len(df)
     
-    # 2. Check null
-    null_counts = df[['paper_id', 'title', 'summary', 'text_for_embedding']].isnull().sum().to_dict()
-    null_rates = df[['paper_id', 'title', 'summary', 'text_for_embedding']].isnull().mean().to_dict()
+    # 1. Check paper_id unique
+    if 'paper_id' in df.columns:
+        unique_paper_ids = int(df['paper_id'].nunique())
+        is_paper_id_unique = bool(df['paper_id'].is_unique)
+        duplicate_paper_ids_count = int(df.duplicated(subset=['paper_id']).sum())
+    else:
+        unique_paper_ids = 0
+        is_paper_id_unique = False
+        duplicate_paper_ids_count = 0
+
+    # 2. Check title/summary missing
+    missing_title_count = int(df['title'].isnull().sum()) if 'title' in df.columns else total_rows
+    missing_summary_count = int(df['summary'].isnull().sum()) if 'summary' in df.columns else total_rows
     
-    # 3. Check duplicates
-    duplicate_count = int(df.duplicated(subset=['paper_id']).sum()) if total_rows > 0 else 0
-    duplicate_rate = float(duplicate_count / total_rows) if total_rows > 0 else 0.0
-    
+    missing_title_rate = float(missing_title_count / total_rows) if total_rows > 0 else 1.0
+    missing_summary_rate = float(missing_summary_count / total_rows) if total_rows > 0 else 1.0
+
+    # 3. Check duplicate (overall row duplicates)
+    duplicate_rows_count = int(df.duplicated().sum()) if total_rows > 0 else 0
+    duplicate_rows_rate = float(duplicate_rows_count / total_rows) if total_rows > 0 else 0.0
+
     # 4. Check age_days (freshness)
-    # Convert published column if it exists, otherwise use nan
     published_col = 'published' if 'published' in df.columns else 'published_date'
     age_days_list = []
-    if published_col in df.columns and total_rows > 0:
-        published_dt = pd.to_datetime(df[published_col], errors='coerce')
-        current_time = pd.Timestamp.now()
-        age_days_series = (current_time - published_dt).dt.days
-        age_days_list = age_days_series.dropna().tolist()
     
+    if 'age_days' in df.columns:
+        age_days_list = df['age_days'].dropna().tolist()
+    elif published_col in df.columns and total_rows > 0:
+        published_dt = pd.to_datetime(df[published_col], errors='coerce')
+        if not published_dt.dropna().empty:
+            # Use the latest date in the dataset as the reference instead of assumed current date
+            ref_date = published_dt.max()
+            age_days_series = (ref_date - published_dt).dt.days
+            age_days_list = age_days_series.dropna().tolist()
+            
     mean_age_days = float(pd.Series(age_days_list).mean()) if age_days_list else None
     max_age_days = float(pd.Series(age_days_list).max()) if age_days_list else None
     min_age_days = float(pd.Series(age_days_list).min()) if age_days_list else None
@@ -47,14 +63,29 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
     # 5. Source Ingestion Timestamp
     source_timestamp = pd.Timestamp.now().isoformat()
     
-    # Combine signals
+    # Combine quality metrics
     quality_metrics = {
         "source_timestamp": source_timestamp,
         "row_count": total_rows,
-        "null_counts": {k: int(v) for k, v in null_counts.items()},
-        "null_rates": {k: float(v) for k, v in null_rates.items()},
-        "duplicate_count": duplicate_count,
-        "duplicate_rate": duplicate_rate,
+        "paper_id_uniqueness": {
+            "unique_count": unique_paper_ids,
+            "is_unique": is_paper_id_unique,
+            "duplicate_count": duplicate_paper_ids_count
+        },
+        "missing_fields": {
+            "title": {
+                "missing_count": missing_title_count,
+                "missing_rate": missing_title_rate
+            },
+            "summary": {
+                "missing_count": missing_summary_count,
+                "missing_rate": missing_summary_rate
+            }
+        },
+        "row_duplicates": {
+            "duplicate_count": duplicate_rows_count,
+            "duplicate_rate": duplicate_rows_rate
+        },
         "age_days": {
             "mean": mean_age_days,
             "max": max_age_days,
@@ -64,7 +95,7 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
             "mean": mean_summary_len,
             "min": min_summary_len
         },
-        "status": "PASSED" if null_rates.get("paper_id", 0) == 0 and duplicate_rate == 0 and total_rows > 0 else "WARNING"
+        "status": "PASSED" if is_paper_id_unique and missing_title_count == 0 and duplicate_rows_count == 0 and total_rows > 0 else "WARNING"
     }
     
     # Save output to quality_dir
@@ -81,7 +112,7 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
 def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) -> dict[str, Any]:
     """Tổng hợp báo cáo độ tươi mới dữ liệu:
     1. Tìm latest và oldest published date.
-    2. Đếm số dòng stale (cũ hơn ngưỡng).
+    2. Đếm số dòng stale (cũ hơn ngưỡng) dựa trên published hoặc age_days.
     3. Lưu và trả về báo cáo JSON.
     """
     total_rows = len(df)
@@ -92,19 +123,24 @@ def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) ->
     stale_rows = 0
     is_fresh = True
     
-    if published_col in df.columns and total_rows > 0:
-        published_dt = pd.to_datetime(df[published_col], errors='coerce').dropna()
-        if not published_dt.empty:
-            latest_published = published_dt.max().isoformat()
-            oldest_published = published_dt.min().isoformat()
+    if total_rows > 0:
+        if published_col in df.columns:
+            published_dt = pd.to_datetime(df[published_col], errors='coerce').dropna()
+            if not published_dt.empty:
+                latest_published = published_dt.max().isoformat()
+                oldest_published = published_dt.min().isoformat()
+                
+                # If age_days column is present, use it. Otherwise, compute it relative to the latest published date (ref_date)
+                if 'age_days' in df.columns:
+                    stale_rows = int((df['age_days'] > settings.freshness_threshold_days).sum())
+                else:
+                    ref_date = published_dt.max()
+                    age_days = (ref_date - published_dt).dt.days
+                    stale_rows = int((age_days > settings.freshness_threshold_days).sum())
+        elif 'age_days' in df.columns:
+            stale_rows = int((df['age_days'] > settings.freshness_threshold_days).sum())
             
-            # Stale condition based on threshold
-            current_time = pd.Timestamp.now()
-            age_days = (current_time - published_dt).dt.days
-            stale_rows = int((age_days > settings.freshness_threshold_days).sum())
-            
-            # If any stale row or average age too old
-            is_fresh = stale_rows == 0
+        is_fresh = stale_rows == 0
             
     freshness_report = {
         "latest_published": latest_published,
@@ -123,4 +159,5 @@ def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) ->
         json.dump(freshness_report, f, indent=4, ensure_ascii=False)
         
     return freshness_report
+
 
