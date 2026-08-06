@@ -1,0 +1,59 @@
+{
+  "repair_source": "D:\\Vin\\Labs\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\raw\\crossref_records.json",
+  "raw_record_count": 24,
+  "repaired_schema_matches_clean_contract": true,
+  "repaired_matches_clean_on_core_fields": true,
+  "clean": {
+    "rows": 22,
+    "paper_id_duplicates": 0,
+    "empty_text_for_embedding": 0,
+    "age_days_min": 5,
+    "age_days_max": 175,
+    "quality_status": "PASSED"
+  },
+  "corrupted": {
+    "rows": 21,
+    "paper_id_duplicates": 1,
+    "empty_text_for_embedding": 0,
+    "age_days_min": 27,
+    "age_days_max": 402,
+    "quality_status": "WARNING"
+  },
+  "repaired": {
+    "rows": 22,
+    "paper_id_duplicates": 0,
+    "empty_text_for_embedding": 0,
+    "age_days_min": 5,
+    "age_days_max": 175,
+    "quality_status": "PASSED"
+  },
+  "repair_cleaning_log": {
+    "input_rows": 24,
+    "output_rows": 22,
+    "removed_rows": 2,
+    "counts_by_reason": {
+      "invalid_published": 2
+    },
+    "removed_records": [
+      {
+        "paper_id": "10.21079/11681/50309",
+        "reason": "invalid_published"
+      },
+      {
+        "paper_id": "10.1111/exsy.70341",
+        "reason": "invalid_published"
+      }
+    ],
+    "csv_path": "D:\\Vin\\Labs\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean_repaired.csv",
+    "json_path": "D:\\Vin\\Labs\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean_repaired.json"
+  },
+  "repaired_freshness": {
+    "latest_published": "2026-08-01T00:00:00",
+    "oldest_published": "2026-02-12T00:00:00",
+    "stale_rows": 0,
+    "total_rows": 22,
+    "is_fresh": true,
+    "threshold_days": 180,
+    "source_timestamp": "2026-08-06T15:40:20.072646"
+  }
+}
