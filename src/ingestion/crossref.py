@@ -1,9 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
+import re
+import time
+from typing import Any
+
+import requests
 
 from core.config import Settings
+from core.utils import normalize_whitespace, read_json, write_json
 
 
 @dataclass(frozen=True)
@@ -21,31 +28,201 @@ class PaperRecord:
     comment: str
 
 
-def parse_crossref_payload(payload: dict) -> list[PaperRecord]:
-    """TODO(student): parse Crossref payload thanh list PaperRecord.
+def _clean_html(value: str) -> str:
+    if not value:
+        return ""
+    cleaned = re.sub(r"<[^>]+>", " ", str(value))
+    return normalize_whitespace(cleaned)
 
-    Pseudo-code:
-    1. Duyet `payload["message"]["items"]`.
-    2. Lay DOI, title, abstract, authors, subject, dates, URLs.
-    3. Chuan hoa text va bo record khong hop le.
-    4. Tra ve list `PaperRecord`.
-    """
-    raise NotImplementedError("Student task: implement Crossref payload parsing.")
+
+def _normalize_string(value: Any) -> str:
+    if value is None:
+        return ""
+    return normalize_whitespace(str(value))
+
+
+def _normalize_string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [normalize_whitespace(str(item)) for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [normalize_whitespace(value)]
+    return []
+
+
+def _build_paper_id(doi: str, title: str) -> str:
+    doi_text = normalize_whitespace(str(doi or "")).lower()
+    if doi_text:
+        doi_text = re.sub(r"^https?://(dx\.)?doi\.org/", "", doi_text, flags=re.I)
+        return doi_text
+    title_text = normalize_whitespace(title or "").lower()
+    if title_text:
+        return re.sub(r"[^a-z0-9]+", "-", title_text).strip("-")
+    return ""
+
+
+def _parse_date_field(value: Any) -> str:
+    if not value:
+        return ""
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value).date().isoformat()
+        except ValueError:
+            return normalize_whitespace(value)
+    if isinstance(value, dict):
+        if date_time := value.get("date-time"):
+            try:
+                return datetime.fromisoformat(date_time).date().isoformat()
+            except ValueError:
+                return normalize_whitespace(date_time)
+        if parts := value.get("date-parts"):
+            return _join_date_parts(parts)
+    if isinstance(value, list):
+        return _join_date_parts(value)
+    return ""
+
+
+def _join_date_parts(parts: Any) -> str:
+    if not isinstance(parts, list) or not parts:
+        return ""
+    first = parts[0] if isinstance(parts[0], list) else parts
+    if not isinstance(first, list):
+        return ""
+    normalized = [str(int(part)).zfill(2) for part in first[:3] if isinstance(part, (int, float)) or str(part).isdigit()]
+    if not normalized:
+        return ""
+    if len(normalized) == 1:
+        return normalized[0]
+    if len(normalized) == 2:
+        return f"{normalized[0]}-{normalized[1]}"
+    return f"{normalized[0]}-{normalized[1]}-{normalized[2]}"
+
+
+def _extract_date(message: dict[str, Any]) -> tuple[str, str]:
+    published = ""
+    updated = ""
+    for key in ("published-print", "published-online", "issued", "created"):
+        if key in message and not published:
+            published = _parse_date_field(message[key])
+    for key in ("indexed", "updated", "created", "issued"):
+        if key in message and not updated:
+            updated = _parse_date_field(message[key])
+    return published, updated
+
+
+def _find_pdf_url(message: dict[str, Any]) -> str:
+    for link in message.get("link", []) if isinstance(message.get("link", []), list) else []:
+        content_type = str(link.get("content-type", "")).lower()
+        if "pdf" in content_type or content_type == "application/pdf":
+            return _normalize_string(link.get("URL", ""))
+    return ""
+
+
+def parse_crossref_payload(payload: dict) -> list[PaperRecord]:
+    """Parse Crossref payload thanh list PaperRecord."""
+    items = payload.get("message", {}).get("items", []) if isinstance(payload, dict) else []
+    records: list[PaperRecord] = []
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+
+        title_candidates = _normalize_string_list(item.get("title", []))
+        title = title_candidates[0] if title_candidates else ""
+        summary = _clean_html(item.get("abstract", ""))
+        authors = [
+            _normalize_string(" ".join((author.get("given", ""), author.get("family", ""))).strip())
+            for author in item.get("author", [])
+            if isinstance(author, dict)
+        ]
+        categories = _normalize_string_list(item.get("subject", []))
+        primary_category = categories[0] if categories else ""
+        published, updated = _extract_date(item)
+        abs_url = _normalize_string(item.get("URL", ""))
+        pdf_url = _find_pdf_url(item)
+        comment = _normalize_string(item.get("type", ""))
+        paper_id = _build_paper_id(item.get("DOI", ""), title)
+
+        if not paper_id or not title:
+            continue
+
+        records.append(
+            PaperRecord(
+                paper_id=paper_id,
+                title=title,
+                summary=summary,
+                authors=authors,
+                categories=categories,
+                primary_category=primary_category,
+                published=published,
+                updated=updated,
+                abs_url=abs_url,
+                pdf_url=pdf_url,
+                comment=comment,
+            )
+        )
+
+    return records
 
 
 def fetch_source_records(settings: Settings) -> list[PaperRecord]:
-    """TODO(student): goi source API, luu raw response, parse thanh records.
+    """Fetch source API, luu raw response va parse thanh records."""
+    api_url = "https://api.crossref.org/works"
+    params: dict[str, Any] = {
+        "query": settings.source_query,
+        "rows": settings.max_results,
+    }
+    if settings.source_filter:
+        params["filter"] = settings.source_filter
 
-    Pseudo-code:
-    1. Tao params tu `settings.source_query`, `settings.source_filter`, `settings.max_results`.
-    2. Goi API voi retry cho cac status code nhu 429/503.
-    3. Luu raw response vao `settings.paths.raw_api_response`.
-    4. Parse payload bang `parse_crossref_payload`.
-    5. Luu records vao `settings.paths.raw_records_json`.
-    """
-    raise NotImplementedError("Student task: implement source fetching.")
+    headers = {
+        "User-Agent": "day10-data-observability-lab-student/0.1 (mailto:student@example.com)",
+        "Accept": "application/json",
+    }
+
+    session = requests.Session()
+    attempt = 1
+    max_attempts = 6
+    backoff_seconds = 1
+    last_exception: Exception | None = None
+
+    while attempt <= max_attempts:
+        try:
+            response = session.get(api_url, params=params, headers=headers, timeout=20)
+            if response.status_code == 200:
+                payload = response.json()
+                write_json(settings.paths.raw_api_response, payload)
+                records = parse_crossref_payload(payload)
+                write_json(settings.paths.raw_records_json, [asdict(record) for record in records])
+                return records
+
+            if response.status_code in {429, 503, 502}:
+                time.sleep(backoff_seconds)
+                backoff_seconds *= 2
+                attempt += 1
+                continue
+
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            last_exception = exc
+            if attempt >= max_attempts:
+                raise
+            time.sleep(backoff_seconds)
+            backoff_seconds *= 2
+            attempt += 1
+
+    raise RuntimeError("Failed to fetch Crossref source records.") from last_exception
 
 
 def load_raw_records(path: Path) -> list[PaperRecord]:
-    """TODO(student): doc JSON snapshot va map thanh `PaperRecord`."""
-    raise NotImplementedError("Student task: implement raw record loading.")
+    """Doc JSON snapshot va map thanh `PaperRecord`."""
+    payload = read_json(path)
+    if not isinstance(payload, list):
+        raise ValueError(f"Expected a list of raw records at {path}, got {type(payload).__name__}.")
+
+    records: list[PaperRecord] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        records.append(PaperRecord(**item))
+
+    return records
