@@ -10,6 +10,13 @@ from core.config import Settings
 import json
 from pathlib import Path
 
+
+def _blank_count(df: pd.DataFrame, column: str, total_rows: int) -> int:
+    if column not in df.columns:
+        return total_rows
+    return int(df[column].fillna("").astype(str).str.strip().eq("").sum())
+
+
 def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: str) -> dict[str, Any]:
     """Chạy các kiểm tra chất lượng dữ liệu: row count, paper_id unique, title/summary missing và duplicate.
     Ghi kết quả vào thư mục `data/quality/`.
@@ -18,20 +25,25 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
     
     # 1. Check paper_id unique
     if 'paper_id' in df.columns:
-        unique_paper_ids = int(df['paper_id'].nunique())
-        is_paper_id_unique = bool(df['paper_id'].is_unique)
-        duplicate_paper_ids_count = int(df.duplicated(subset=['paper_id']).sum())
+        canonical_paper_ids = df['paper_id'].fillna('').astype(str).str.strip().str.casefold()
+        unique_paper_ids = int(canonical_paper_ids.nunique())
+        missing_paper_id_count = int(canonical_paper_ids.eq('').sum())
+        duplicate_paper_ids_count = int(canonical_paper_ids.duplicated().sum())
+        is_paper_id_unique = missing_paper_id_count == 0 and duplicate_paper_ids_count == 0
     else:
         unique_paper_ids = 0
         is_paper_id_unique = False
+        missing_paper_id_count = total_rows
         duplicate_paper_ids_count = 0
 
-    # 2. Check title/summary missing
-    missing_title_count = int(df['title'].isnull().sum()) if 'title' in df.columns else total_rows
-    missing_summary_count = int(df['summary'].isnull().sum()) if 'summary' in df.columns else total_rows
+    # 2. Check required text fields
+    missing_title_count = _blank_count(df, 'title', total_rows)
+    missing_summary_count = _blank_count(df, 'summary', total_rows)
+    missing_embedding_count = _blank_count(df, 'text_for_embedding', total_rows)
     
     missing_title_rate = float(missing_title_count / total_rows) if total_rows > 0 else 1.0
     missing_summary_rate = float(missing_summary_count / total_rows) if total_rows > 0 else 1.0
+    missing_embedding_rate = float(missing_embedding_count / total_rows) if total_rows > 0 else 1.0
 
     # 3. Check duplicate (overall row duplicates)
     duplicate_rows_count = int(df.astype(str).duplicated().sum()) if total_rows > 0 else 0
@@ -41,8 +53,13 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
     published_col = 'published' if 'published' in df.columns else 'published_date'
     age_days_list = []
     
+    invalid_age_days_count = total_rows
+    negative_age_days_count = 0
     if 'age_days' in df.columns:
-        age_days_list = df['age_days'].dropna().tolist()
+        age_days = pd.to_numeric(df['age_days'], errors='coerce')
+        invalid_age_days_count = int(age_days.isna().sum())
+        negative_age_days_count = int((age_days < 0).sum())
+        age_days_list = age_days.dropna().tolist()
     elif published_col in df.columns and total_rows > 0:
         published_dt = pd.to_datetime(df[published_col], errors='coerce')
         if not published_dt.dropna().empty:
@@ -70,6 +87,7 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
         "paper_id_uniqueness": {
             "unique_count": unique_paper_ids,
             "is_unique": is_paper_id_unique,
+            "missing_count": missing_paper_id_count,
             "duplicate_count": duplicate_paper_ids_count
         },
         "missing_fields": {
@@ -80,6 +98,10 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
             "summary": {
                 "missing_count": missing_summary_count,
                 "missing_rate": missing_summary_rate
+            },
+            "text_for_embedding": {
+                "missing_count": missing_embedding_count,
+                "missing_rate": missing_embedding_rate
             }
         },
         "row_duplicates": {
@@ -89,13 +111,24 @@ def run_data_quality_checks(df: pd.DataFrame, settings: Settings, report_name: s
         "age_days": {
             "mean": mean_age_days,
             "max": max_age_days,
-            "min": min_age_days
+            "min": min_age_days,
+            "invalid_count": invalid_age_days_count,
+            "negative_count": negative_age_days_count
         },
         "summary_length": {
             "mean": mean_summary_len,
             "min": min_summary_len
         },
-        "status": "PASSED" if is_paper_id_unique and missing_title_count == 0 and duplicate_rows_count == 0 and total_rows > 0 else "WARNING"
+        "status": "PASSED" if (
+            total_rows > 0
+            and is_paper_id_unique
+            and missing_title_count == 0
+            and missing_summary_count == 0
+            and missing_embedding_count == 0
+            and duplicate_rows_count == 0
+            and invalid_age_days_count == 0
+            and negative_age_days_count == 0
+        ) else "WARNING"
     }
     
     # Save output to quality_dir
