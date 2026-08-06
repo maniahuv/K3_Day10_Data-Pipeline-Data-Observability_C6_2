@@ -40,7 +40,7 @@ Summary: Summary In high-risk industrial settings, leveraging large language mod
 Đã thêm script:
 
 ```text
-script/check_role4_cp1_clean_contract.py
+script/role4/check_role4_cp1_clean_contract.py
 ```
 
 Script này sẽ:
@@ -79,14 +79,14 @@ Nếu dùng `uv`:
 
 ```powershell
 uv sync
-uv run python script/check_role4_cp1_clean_contract.py
+uv run python script/role4/check_role4_cp1_clean_contract.py
 ```
 
 Nếu dùng venv/pip:
 
 ```powershell
 python -m pip install -e .
-python script/check_role4_cp1_clean_contract.py
+python script/role4/check_role4_cp1_clean_contract.py
 ```
 
 ## Config index đã xác nhận
