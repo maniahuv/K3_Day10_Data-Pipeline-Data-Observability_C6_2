@@ -1,0 +1,20 @@
+{
+  "input_rows": 24,
+  "output_rows": 22,
+  "removed_rows": 2,
+  "counts_by_reason": {
+    "invalid_published": 2
+  },
+  "removed_records": [
+    {
+      "paper_id": "10.21079/11681/50309",
+      "reason": "invalid_published"
+    },
+    {
+      "paper_id": "10.1111/exsy.70341",
+      "reason": "invalid_published"
+    }
+  ],
+  "csv_path": "D:\\Vin\\Labs\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean_repaired.csv",
+  "json_path": "D:\\Vin\\Labs\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\clean\\papers_clean_repaired.json"
+}
