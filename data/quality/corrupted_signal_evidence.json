@@ -1,0 +1,88 @@
+{
+  "artifact_type": "corrupted_quality_metric_evidence",
+  "corruption_log_path": "C:\\Users\\ASUS\\Desktop\\DAY10\\K3_Day10_Data-Pipeline-Data-Observability_C6_2\\data\\results\\corruption_log.json",
+  "corruption_counts_by_type": {
+    "drop_latest_record": 2,
+    "blank_summary": 1,
+    "inject_noise": 1,
+    "truncate_title": 1,
+    "age_published_date": 1,
+    "duplicate_record": 1
+  },
+  "corruption_event_count": 7,
+  "quality_signal_deltas": {
+    "row_count": {
+      "baseline": 22,
+      "corrupted": 21,
+      "delta": -1.0,
+      "status": "decreased"
+    },
+    "summary_missing_rate": {
+      "baseline": 0.0,
+      "corrupted": 0.047619047619047616,
+      "delta": 0.047619047619047616,
+      "status": "increased"
+    },
+    "paper_id_duplicate_count": {
+      "baseline": 0,
+      "corrupted": 1,
+      "delta": 1.0,
+      "status": "increased"
+    },
+    "row_duplicate_rate": {
+      "baseline": 0.0,
+      "corrupted": 0.047619047619047616,
+      "delta": 0.047619047619047616,
+      "status": "increased"
+    },
+    "max_age_days": {
+      "baseline": 175.0,
+      "corrupted": 402.0,
+      "delta": 227.0,
+      "status": "increased"
+    },
+    "freshness_stale_rows": {
+      "baseline": 0,
+      "corrupted": 1,
+      "delta": 1.0,
+      "status": "increased"
+    },
+    "text_for_embedding_missing_rate": {
+      "baseline": 0.0,
+      "corrupted": 0.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    }
+  },
+  "rag_metric_deltas": {
+    "retrieval_hit_rate": {
+      "baseline": 1.0,
+      "corrupted": 1.0,
+      "delta": 0.0,
+      "status": "unchanged"
+    },
+    "mean_token_f1": {
+      "baseline": 1.0,
+      "corrupted": 0.7,
+      "delta": -0.30000000000000004,
+      "status": "decreased"
+    },
+    "judge_accuracy": {
+      "baseline": 1.0,
+      "corrupted": 0.8,
+      "delta": -0.19999999999999996,
+      "status": "decreased"
+    },
+    "mean_judge_score": {
+      "baseline": 5,
+      "corrupted": 4.233333333333333,
+      "delta": -0.7666666666666666,
+      "status": "decreased"
+    }
+  },
+  "unchanged_signals": [
+    "text_for_embedding_missing_rate",
+    "retrieval_hit_rate"
+  ],
+  "interpretation_guardrail": "Only metrics with measured deltas are treated as changed; unchanged signals are listed explicitly to avoid over-claiming."
+}
