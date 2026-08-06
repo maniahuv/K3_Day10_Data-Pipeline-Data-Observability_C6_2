@@ -15,10 +15,10 @@
 | --: | --- | --- | --- | --- |
 | 1 | Vũ Hải Nam | 2A202601173 | Role 1 (Lead/Orchestrator) | `corruption_flow.py`, `phase1.py`, `core/config.py` |
 | 2 | Ong Xuân Sơn | 2A202601327 | Role 2 (Ingestion) | `crossref.py`, `raw_records.json` |
-| 3 | [Thành viên 3] | [MSSV] | Role 3 (Cleaning/Corrupt) | `cleaning.py`, `corruption.py`, `papers_clean.json` |
-| 4 | [Thành viên 4] | [MSSV] | Role 4 (RAG/Embedding) | `retrieval/index.py`, Vector Database |
+| 3 | Nguyễn Duy Dũng | 2A202601505 | Role 3 (Cleaning/Corrupt) | `cleaning.py`, `corruption.py`, `papers_clean.json` |
+| 4 | Giang Minh Phú | 2A202601729 | Role 4 (RAG/Embedding) | `retrieval/index.py`, Vector Database |
 | 5 | Nguyễn Minh Nhật | 2A202601131 | Role 5 (Evaluation) | `evaluation/metrics.py`, `test_set.json` |
-| 6 | [Thành viên 6] | [MSSV] | Role 6 (Observability) | `observability/quality.py`, `reporting.py` |
+| 6 | Nguyễn Tiến Thành | 2A202601539 | Role 6 (Observability) | `observability/quality.py`, `reporting.py` |
 
 ## 2. Tóm tắt kết quả
 
