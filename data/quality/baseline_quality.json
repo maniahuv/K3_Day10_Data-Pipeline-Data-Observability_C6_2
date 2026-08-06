@@ -1,0 +1,28 @@
+{
+    "source_timestamp": "2026-08-06T11:36:21.769973",
+    "row_count": 22,
+    "null_counts": {
+        "paper_id": 0,
+        "title": 0,
+        "summary": 0,
+        "text_for_embedding": 0
+    },
+    "null_rates": {
+        "paper_id": 0.0,
+        "title": 0.0,
+        "summary": 0.0,
+        "text_for_embedding": 0.0
+    },
+    "duplicate_count": 0,
+    "duplicate_rate": 0.0,
+    "age_days": {
+        "mean": 81.68181818181819,
+        "max": 175.0,
+        "min": 5.0
+    },
+    "summary_length": {
+        "mean": 1777.7727272727273,
+        "min": 1095.0
+    },
+    "status": "PASSED"
+}
