@@ -8,8 +8,8 @@
 
 | Thông tin | Nội dung |
 | :--- | :--- |
-| **Họ và tên** | [Điền Họ và tên của bạn] |
-| **MSSV** | [Điền MSSV] |
+| **Họ và tên** | Nguyen Minh Nhat |
+| **MSSV** | 2A202601131 |
 | **Khóa / Lớp** | K3 / K4 |
 | **Tên nhóm** | Nhóm 6 người |
 | **Vai trò chính** | **Role 5: Evaluation Owner (Phụ trách Đánh giá & Evaluation)** |
